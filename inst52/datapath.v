@@ -58,7 +58,7 @@ module datapath (
   //decode stage
   wire [31:0] pcplus4D, instrD;
   wire forwardaD, forwardbD;
-  wire [4:0] rsD, rtD, rdD;
+  wire [4:0] rsD, rtD, rdD,saD;
   wire flushD, stallD;
   wire [31:0] signimmD, signimmshD;
   wire [31:0] srcaD, srca2D, srcbD, srcb2D;

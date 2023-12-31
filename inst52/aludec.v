@@ -33,11 +33,18 @@ module aludec (
         `EXE_ADD: alucontrol <= `EXE_ADD_OP;  //add
         `EXE_SUB: alucontrol <= `EXE_SUB_OP;  //sub
         `EXE_SLT: alucontrol <= `EXE_SLT_OP;  //slt
-        //逻辑运算
+        // 逻辑运算
         `EXE_AND: alucontrol <= `EXE_AND_OP;  //and
         `EXE_OR:  alucontrol <= `EXE_OR_OP;  //or
         `EXE_XOR: alucontrol <= `EXE_XOR_OP;  //xor
         `EXE_NOR: alucontrol <= `EXE_NOR_OP;  //nor
+        // 移位运算
+        `EXE_SLL: alucontrol <= `EXE_SLL_OP;  //sll
+        `EXE_SRL: alucontrol <= `EXE_SRL_OP;  //srl
+        `EXE_SRA: alucontrol <= `EXE_SRA_OP;  //sra
+        `EXE_SLLV: alucontrol <= `EXE_SLLV_OP;  //sllv
+        `EXE_SRLV: alucontrol <= `EXE_SRLV_OP;  //srlv
+        `EXE_SRAV: alucontrol <= `EXE_SRAV_OP;  //srav
         default:  alucontrol <= `EXE_ADDU_OP;
       endcase
       // 逻辑运算 immediate

@@ -48,7 +48,7 @@ module mips(
 		alucontrolE,
 
 		//mem stage
-		memtoregM,memwriteM,
+		memtoregM,memwrite,
 		regwriteM,
 		//write back stage
 		memtoregW,regwriteW
@@ -72,8 +72,8 @@ module mips(
 		//mem stage
 		memtoregM,
 		regwriteM,
-		aluoutM,writedataM,
-		readdataM,
+		aluout,writedata,
+		readdata,
 		//writeback stage
 		memtoregW,
 		regwriteW

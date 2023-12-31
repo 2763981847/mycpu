@@ -23,6 +23,7 @@
 module alu (
     input  wire [31:0] a,
     b,
+    input  wire [ 4:0] sa,
     input  wire [ 7:0] op,
     output reg  [31:0] y
 );
@@ -42,6 +43,13 @@ module alu (
       `EXE_SUB_OP: y <= a - b;
       `EXE_SLT_OP: y <= a < b;
       `EXE_ADDU_OP: y <= a + b;
+      // 位移运算
+      `EXE_SLL_OP: y <= b <<< sa;
+      `EXE_SRL_OP: y <= b >>> sa;
+      `EXE_SRA_OP: y <= b >> sa;
+      `EXE_SLLV_OP: y <= b <<< a;
+      `EXE_SRLV_OP: y <= b >>> a;
+      `EXE_SRAV_OP: y <= b >> a;
       default: y <= 32'b0;
     endcase
   end

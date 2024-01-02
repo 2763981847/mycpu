@@ -30,25 +30,29 @@ module aludec (
       `EXE_NOP:  // R-type
       case (functD)
         // 算数运算
-        `EXE_ADD:  alucontrol <= `EXE_ADD_OP;  //add
+        `EXE_ADD: alucontrol <= `EXE_ADD_OP;  //add
         `EXE_ADDU: alucontrol <= `EXE_ADDU_OP;  //addu
-        `EXE_SUB:  alucontrol <= `EXE_SUB_OP;  //sub
+        `EXE_SUB: alucontrol <= `EXE_SUB_OP;  //sub
         `EXE_SUBU: alucontrol <= `EXE_SUBU_OP;  //subu
-        `EXE_SLT:  alucontrol <= `EXE_SLT_OP;  //slt
+        `EXE_SLT: alucontrol <= `EXE_SLT_OP;  //slt
         `EXE_SLTU: alucontrol <= `EXE_SLTU_OP;  //sltu
+        `EXE_MULT: alucontrol <= `EXE_MULT_OP;  //mult
+        `EXE_MULTU: alucontrol <= `EXE_MULTU_OP;  //multu
+        `EXE_DIV: alucontrol <= `EXE_DIV_OP;  //div
+        `EXE_DIVU: alucontrol <= `EXE_DIVU_OP;  //divu
         // 逻辑运算
-        `EXE_AND:  alucontrol <= `EXE_AND_OP;  //and
-        `EXE_OR:   alucontrol <= `EXE_OR_OP;  //or
-        `EXE_XOR:  alucontrol <= `EXE_XOR_OP;  //xor
-        `EXE_NOR:  alucontrol <= `EXE_NOR_OP;  //nor
+        `EXE_AND: alucontrol <= `EXE_AND_OP;  //and
+        `EXE_OR: alucontrol <= `EXE_OR_OP;  //or
+        `EXE_XOR: alucontrol <= `EXE_XOR_OP;  //xor
+        `EXE_NOR: alucontrol <= `EXE_NOR_OP;  //nor
         // 移位运算
-        `EXE_SLL:  alucontrol <= `EXE_SLL_OP;  //sll
-        `EXE_SRL:  alucontrol <= `EXE_SRL_OP;  //srl
-        `EXE_SRA:  alucontrol <= `EXE_SRA_OP;  //sra
+        `EXE_SLL: alucontrol <= `EXE_SLL_OP;  //sll
+        `EXE_SRL: alucontrol <= `EXE_SRL_OP;  //srl
+        `EXE_SRA: alucontrol <= `EXE_SRA_OP;  //sra
         `EXE_SLLV: alucontrol <= `EXE_SLLV_OP;  //sllv
         `EXE_SRLV: alucontrol <= `EXE_SRLV_OP;  //srlv
         `EXE_SRAV: alucontrol <= `EXE_SRAV_OP;  //srav
-        default:   alucontrol <= `EXE_ADDU_OP;
+        default: alucontrol <= `EXE_ADDU_OP;
       endcase
       // 逻辑运算 immediate
       `EXE_ANDI: alucontrol <= `EXE_ANDI_OP;  //andi

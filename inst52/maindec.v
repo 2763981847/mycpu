@@ -32,6 +32,7 @@ module maindec (
     output reg jump,
     output reg hilowrite
 );
+
   // memtoreg
   always @(*) begin
     case (op)
@@ -39,6 +40,7 @@ module maindec (
       default: memtoreg <= 1'b0;
     endcase
   end
+
   // memwrite
   always @(*) begin
     case (op)
@@ -46,6 +48,7 @@ module maindec (
       default: memwrite <= 1'b0;
     endcase
   end
+
   // branch
   always @(*) begin
     case (op)
@@ -80,10 +83,16 @@ module maindec (
   always @(*) begin
     case (op)
       // R-type
-      `EXE_NOP,
-      // 逻辑运算指令 R-type
+      `EXE_NOP: begin
+        case (funct)
+          // 乘除法
+          `EXE_MULT, `EXE_MULTU, `EXE_DIV, `EXE_DIVU: regwrite <= 1'b0;
+          default: regwrite <= 1'b1;
+        endcase
+      end
+      // 逻辑运算指令 I-type
       `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI,
-      // 算数运算指令 R-type
+      // 算数运算指令 I-type
       `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
       // 访存指令
       `EXE_LW:
@@ -105,7 +114,7 @@ module maindec (
     case (op)
       `EXE_NOP: begin
         case (funct)
-          `EXE_MTHI, `EXE_MTLO: hilowrite <= 1'b1;
+          `EXE_MTHI, `EXE_MTLO, `EXE_MULT, `EXE_MULTU, `EXE_DIV, `EXE_DIVU: hilowrite <= 1'b1;
           default: hilowrite <= 1'b0;
         endcase
       end

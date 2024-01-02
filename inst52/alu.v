@@ -27,7 +27,7 @@ module alu (
     lo,
     input  wire [ 4:0] sa,
     input  wire [ 7:0] op,
-    output reg  [31:0] y
+    output reg  [63:0] y
 );
   always @(*) begin
     case (op)
@@ -41,16 +41,17 @@ module alu (
       `EXE_ORI_OP: y <= a | {{16{1'b0}}, b[15:0]};
       `EXE_XORI_OP: y <= a ^ {{16{1'b0}}, b[15:0]};
       `EXE_LUI_OP: y <= {b[15:0], {16{1'b0}}};
-      // 算数运算指令	R-type
-      `EXE_ADD_OP: y <= a + b;
-      `EXE_ADDU_OP: y <= a + b;
-      `EXE_SUB_OP: y <= a - b;
-      `EXE_SUBU_OP: y <= a - b;
+      // 算术运算指令	R-type
+      `EXE_ADD_OP, `EXE_ADDU_OP: y <= a + b;
+      `EXE_SUB_OP, `EXE_SUBU_OP: y <= a - b;
       `EXE_SLT_OP: y <= $signed(a) < $signed(b);
       `EXE_SLTU_OP: y <= a < b;
-      // 算数运算指令	I-type
-      `EXE_ADDI_OP: y <= a + b;  // 数据扩展模块已经是有符号拓展了
-      `EXE_ADDIU_OP: y <= a + b;
+      `EXE_MULT_OP: y <= $signed(a) * $signed(b);
+      `EXE_MULTU_OP: y <= {32'b0, a} * {32'b0, b};
+      `EXE_DIV_OP: y <= {$signed(a) % $signed(b), $signed(a) / $signed(b)};
+      `EXE_DIVU_OP: y <= {a % b, a / b};
+      // 算术运算指令	I-type
+      `EXE_ADDI_OP, `EXE_ADDIU_OP: y <= a + b;
       `EXE_SLTI_OP: y <= $signed(a) < $signed(b);
       `EXE_SLTIU_OP: y <= a < b;
       // 位移运算指令
@@ -60,7 +61,7 @@ module alu (
       `EXE_SLLV_OP: y <= b << a;
       `EXE_SRLV_OP: y <= b >> a;
       `EXE_SRAV_OP: y <= $signed(b) >>> a;
-      default: y <= 32'b0;
+      default: y <= 63'b0;
     endcase
   end
 endmodule

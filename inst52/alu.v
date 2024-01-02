@@ -31,21 +31,29 @@ module alu (
 );
   always @(*) begin
     case (op)
-      // 逻辑运算指令
+      // 逻辑运算指令 R-type
       `EXE_AND_OP: y <= a & b;
       `EXE_OR_OP: y <= a | b;
       `EXE_XOR_OP: y <= a ^ b;
       `EXE_NOR_OP: y <= ~(a | b);
+      // 逻辑运算指令 I-type
       `EXE_ANDI_OP: y <= a & {{16{1'b0}}, b[15:0]};
       `EXE_ORI_OP: y <= a | {{16{1'b0}}, b[15:0]};
       `EXE_XORI_OP: y <= a ^ {{16{1'b0}}, b[15:0]};
       `EXE_LUI_OP: y <= {b[15:0], {16{1'b0}}};
-      // 算数运算	
+      // 算数运算指令	R-type
       `EXE_ADD_OP: y <= a + b;
-      `EXE_SUB_OP: y <= a - b;
-      `EXE_SLT_OP: y <= a < b;
       `EXE_ADDU_OP: y <= a + b;
-      // 位移运算
+      `EXE_SUB_OP: y <= a - b;
+      `EXE_SUBU_OP: y <= a - b;
+      `EXE_SLT_OP: y <= $signed(a) < $signed(b);
+      `EXE_SLTU_OP: y <= a < b;
+      // 算数运算指令	I-type
+      `EXE_ADDI_OP: y <= a + b;  // 数据扩展模块已经是有符号拓展了
+      `EXE_ADDIU_OP: y <= a + b;
+      `EXE_SLTI_OP: y <= $signed(a) < $signed(b);
+      `EXE_SLTIU_OP: y <= a < b;
+      // 位移运算指令
       `EXE_SLL_OP: y <= b << sa;
       `EXE_SRL_OP: y <= b >> sa;
       `EXE_SRA_OP: y <= $signed(b) >>> sa;

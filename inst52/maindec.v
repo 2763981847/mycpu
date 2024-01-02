@@ -21,7 +21,8 @@
 
 `include "defines.vh"
 module maindec (
-    input wire [5:0] op,funct,
+    input wire [5:0] op,
+    funct,
     output reg memtoreg,
     memwrite,
     output reg branch,
@@ -56,7 +57,13 @@ module maindec (
   // alusrc
   always @(*) begin
     case (op)
-      `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI, `EXE_ADDI, `EXE_LW, `EXE_SW: alusrc <= 1'b1;
+      // 逻辑运算指令 I-type
+      `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI,
+      // 算数运算指令 I-type
+      `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
+      // 访存指令
+      `EXE_LW, `EXE_SW:
+      alusrc <= 1'b1;
       default: alusrc <= 1'b0;
     endcase
   end
@@ -72,7 +79,14 @@ module maindec (
   // regwrite
   always @(*) begin
     case (op)
-      `EXE_NOP, `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI, `EXE_ADDI, `EXE_LW:
+      // R-type
+      `EXE_NOP,
+      // 逻辑运算指令 R-type
+      `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI,
+      // 算数运算指令 R-type
+      `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
+      // 访存指令
+      `EXE_LW:
       regwrite <= 1'b1;  //LW
       default: regwrite <= 1'b0;
     endcase

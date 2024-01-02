@@ -35,6 +35,7 @@ module datapath (
     functD,
     //execute stage
     input wire memtoregE,
+    input wire hilowriteE,
     input wire alusrcE,
     regdstE,
     input wire regwriteE,
@@ -58,7 +59,7 @@ module datapath (
   //decode stage
   wire [31:0] pcplus4D, instrD;
   wire forwardaD, forwardbD;
-  wire [4:0] rsD, rtD, rdD,saD;
+  wire [4:0] rsD, rtD, rdD, saD;
   wire flushD, stallD;
   wire [31:0] signimmD, signimmshD;
   wire [31:0] srcaD, srca2D, srcbD, srcb2D;
@@ -68,7 +69,8 @@ module datapath (
   wire [ 4:0] writeregE;
   wire [31:0] signimmE;
   wire [31:0] srcaE, srca2E, srcbE, srcb2E, srcb3E;
-  wire [31:0] aluoutE;
+  wire [63:0] aluoutE;
+  wire [31:0] hiE,loE;
   //mem stage
   wire [ 4:0] writeregM;
   //writeback stage
@@ -128,6 +130,14 @@ module datapath (
       resultW,
       srcaD,
       srcbD
+  );
+  hilo_reg hilo (
+      clk,
+      rst,
+      aluoutE,
+      hilowriteE,
+      hiE,
+      loE
   );
 
   //fetch stage logic
@@ -270,6 +280,8 @@ module datapath (
   alu alu (
       srca2E,
       srcb3E,
+      hiE,
+      loE,
       saE,
       alucontrolE,
       aluoutE
@@ -291,7 +303,7 @@ module datapath (
   flopr #(32) r2M (
       clk,
       rst,
-      aluoutE,
+      aluoutE[31:0],
       aluoutM
   );
   flopr #(5) r3M (

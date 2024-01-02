@@ -38,6 +38,7 @@ module controller (
     output wire regdstE,
     regwriteE,
     output wire [7:0] alucontrolE,
+    output wire hilowriteE,
 
     //mem stage
     output wire memtoregM,
@@ -46,11 +47,10 @@ module controller (
     //write back stage
     output wire memtoregW,
     regwriteW
-
 );
 
   //decode stage
-  wire memtoregD, memwriteD, alusrcD, regdstD, regwriteD;
+  wire memtoregD, memwriteD, alusrcD, regdstD, regwriteD, hilowriteD;
   wire [7:0] alucontrolD;
 
   //execute stage
@@ -58,13 +58,15 @@ module controller (
 
   maindec md (
       opD,
+      functD,
       memtoregD,
       memwriteD,
       branchD,
       alusrcD,
       regdstD,
       regwriteD,
-      jumpD
+      jumpD,
+      hilowriteD
   );
   aludec ad (
       opD,
@@ -75,12 +77,28 @@ module controller (
   assign pcsrcD = branchD & equalD;
 
   //pipeline registers
-  floprc #(13) regE (
+  floprc #(14) regE (
       clk,
       rst,
       flushE,
-      {memtoregD, memwriteD, alusrcD, regdstD, regwriteD, alucontrolD},
-      {memtoregE, memwriteE, alusrcE, regdstE, regwriteE, alucontrolE}
+      {
+        memtoregD,
+        memwriteD,
+        alusrcD,
+        regdstD,
+        regwriteD,
+        alucontrolD,
+        hilowriteD
+      },
+      {
+        memtoregE,
+        memwriteE,
+        alusrcE,
+        regdstE,
+        regwriteE,
+        alucontrolE,
+        hilowriteE
+      }
   );
   flopr #(3) regM (
       clk,

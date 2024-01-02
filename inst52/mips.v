@@ -20,63 +20,81 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module mips(
-	input wire clk,rst,
-	output wire[31:0] pc,
-	input wire[31:0] instr,
-	output wire memwrite,
-	output wire[31:0] aluout,writedata,
-	input wire[31:0] readdata 
-    );
-	
-	wire [5:0] opD,functD;
-	wire regdstE,alusrcE,pcsrcD,memtoregE,memtoregM,memtoregW,
-			regwriteE,regwriteM,regwriteW;
-	wire [7:0] alucontrolE;
-	wire flushE,equalD;
+module mips (
+    input wire clk,
+    rst,
+    output wire [31:0] pc,
+    input wire [31:0] instr,
+    output wire memwrite,
+    output wire [31:0] aluout,
+    writedata,
+    input wire [31:0] readdata
+);
 
-	controller c(
-		clk,rst,
-		//decode stage
-		opD,functD,
-		pcsrcD,branchD,equalD,jumpD,
-		
-		//execute stage
-		flushE,
-		memtoregE,alusrcE,
-		regdstE,regwriteE,	
-		alucontrolE,
+  wire [5:0] opD, functD;
+  wire regdstE,alusrcE,pcsrcD,memtoregE,memtoregM,memtoregW,
+			regwriteE,regwriteM,regwriteW,hilowriteE,branchD,jumpD;
+  wire [7:0] alucontrolE;
+  wire flushE, equalD;
 
-		//mem stage
-		memtoregM,memwrite,
-		regwriteM,
-		//write back stage
-		memtoregW,regwriteW
-		);
-	datapath dp(
-		clk,rst,
-		//fetch stage
-		pc,
-		instr,
-		//decode stage
-		pcsrcD,branchD,
-		jumpD,
-		equalD,
-		opD,functD,
-		//execute stage
-		memtoregE,
-		alusrcE,regdstE,
-		regwriteE,
-		alucontrolE,
-		flushE,
-		//mem stage
-		memtoregM,
-		regwriteM,
-		aluout,writedata,
-		readdata,
-		//writeback stage
-		memtoregW,
-		regwriteW
-	    );
-	
+  controller c (
+      clk,
+      rst,
+      //decode stage
+      opD,
+      functD,
+      pcsrcD,
+      branchD,
+      equalD,
+      jumpD,
+
+      //execute stage
+      flushE,
+      memtoregE,
+      alusrcE,
+      regdstE,
+      regwriteE,
+      alucontrolE,
+      hilowriteE,
+
+      //mem stage
+      memtoregM,
+      memwrite,
+      regwriteM,
+      //write back stage
+      memtoregW,
+      regwriteW
+  );
+  datapath dp (
+      clk,
+      rst,
+      //fetch stage
+      pc,
+      instr,
+      //decode stage
+      pcsrcD,
+      branchD,
+      jumpD,
+      equalD,
+      opD,
+      functD,
+      //execute stage
+      memtoregE,
+      hilowriteE,
+      alusrcE,
+      regdstE,
+      regwriteE,
+      alucontrolE,
+      flushE,
+      //mem stage
+      memtoregM,
+      regwriteM,
+      aluout,
+      writedata,
+      readdata,
+      //writeback stage
+      memtoregW,
+      regwriteW
+  );
+
 endmodule

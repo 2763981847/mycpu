@@ -21,32 +21,82 @@
 
 `include "defines.vh"
 module maindec (
-    input wire [5:0] op,
-    output wire memtoreg,
+    input wire [5:0] op,funct,
+    output reg memtoreg,
     memwrite,
-    output wire branch,
+    output reg branch,
     alusrc,
-    output wire regdst,
+    output reg regdst,
     regwrite,
-    output wire jump
+    output reg jump,
+    output reg hilowrite
 );
-  reg [8:0] controls;
-  assign {regwrite, regdst, alusrc, branch, memwrite, memtoreg, jump} = controls;
+  // memtoreg
   always @(*) begin
     case (op)
-      // R-TYPE 
-      `EXE_NOP: controls <= 7'b1100000;  //R-TYRE
-      // 逻辑指令 immediate
-      `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI: controls <= 7'b1010000;  //ANDI, ORI, XORI, LUI
-      // 算术指令 immediate
-      `EXE_ADDI: controls <= 7'b1010000;  //ADDI
-      // 访存指令
-      `EXE_LW: controls <= 7'b1010010;  //LW
-      `EXE_SW: controls <= 7'b0010100;  //SW
-      // 跳转指令
-      `EXE_BEQ: controls <= 7'b0001000;  //BEQ
-      `EXE_J: controls <= 7'b0000001;  //J
-      default: controls <= 7'b0000000;  //illegal op
+      `EXE_LW: memtoreg <= 1'b1;
+      default: memtoreg <= 1'b0;
     endcase
   end
+  // memwrite
+  always @(*) begin
+    case (op)
+      `EXE_SW: memwrite <= 1'b1;
+      default: memwrite <= 1'b0;
+    endcase
+  end
+  // branch
+  always @(*) begin
+    case (op)
+      `EXE_BEQ: branch <= 1'b1;
+      default:  branch <= 1'b0;
+    endcase
+  end
+
+  // alusrc
+  always @(*) begin
+    case (op)
+      `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI, `EXE_ADDI, `EXE_LW, `EXE_SW: alusrc <= 1'b1;
+      default: alusrc <= 1'b0;
+    endcase
+  end
+
+  // regdst
+  always @(*) begin
+    case (op)
+      `EXE_NOP: regdst <= 1'b1;
+      default:  regdst <= 1'b0;
+    endcase
+  end
+
+  // regwrite
+  always @(*) begin
+    case (op)
+      `EXE_NOP, `EXE_ANDI, `EXE_ORI, `EXE_XORI, `EXE_LUI, `EXE_ADDI, `EXE_LW:
+      regwrite <= 1'b1;  //LW
+      default: regwrite <= 1'b0;
+    endcase
+  end
+
+  // jump
+  always @(*) begin
+    case (op)
+      `EXE_J:  jump <= 1'b1;
+      default: jump <= 1'b0;
+    endcase
+  end
+
+  // hilowrite
+  always @(*) begin
+    case (op)
+      `EXE_NOP: begin
+        case (funct)
+          `EXE_MTHI, `EXE_MTLO: hilowrite <= 1'b1;
+          default: hilowrite <= 1'b0;
+        endcase
+      end
+      default: hilowrite <= 1'b0;
+    endcase
+  end
+
 endmodule

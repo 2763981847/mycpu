@@ -23,6 +23,8 @@
 module alu (
     input  wire [31:0] a,
     b,
+    hi,
+    lo,
     input  wire [ 4:0] sa,
     input  wire [ 7:0] op,
     output reg  [31:0] y

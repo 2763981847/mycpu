@@ -44,12 +44,12 @@ module alu (
       `EXE_SLT_OP: y <= a < b;
       `EXE_ADDU_OP: y <= a + b;
       // 位移运算
-      `EXE_SLL_OP: y <= b <<< sa;
-      `EXE_SRL_OP: y <= b >>> sa;
-      `EXE_SRA_OP: y <= b >> sa;
-      `EXE_SLLV_OP: y <= b <<< a;
-      `EXE_SRLV_OP: y <= b >>> a;
-      `EXE_SRAV_OP: y <= b >> a;
+      `EXE_SLL_OP: y <= b << sa;
+      `EXE_SRL_OP: y <= b >> sa;
+      `EXE_SRA_OP: y <= $signed(b) >>> sa;
+      `EXE_SLLV_OP: y <= b << a;
+      `EXE_SRLV_OP: y <= b >> a;
+      `EXE_SRAV_OP: y <= $signed(b) >>> a;
       default: y <= 32'b0;
     endcase
   end

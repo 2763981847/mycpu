@@ -38,7 +38,7 @@ module maindec (
   // memtoreg
   always @(*) begin
     case (op)
-      `EXE_LW,`EXE_LB,`EXE_LBU,`EXE_LH,`EXE_LHU: memtoreg <= 1'b1;
+      `EXE_LW, `EXE_LB, `EXE_LBU, `EXE_LH, `EXE_LHU: memtoreg <= 1'b1;
       default: memtoreg <= 1'b0;
     endcase
   end
@@ -46,7 +46,7 @@ module maindec (
   // memwrite
   always @(*) begin
     case (op)
-      `EXE_SW,`EXE_SB,`EXE_SH: memwrite <= 1'b1;
+      `EXE_SW, `EXE_SB, `EXE_SH: memwrite <= 1'b1;
       default: memwrite <= 1'b0;
     endcase
   end
@@ -54,8 +54,8 @@ module maindec (
   // branch
   always @(*) begin
     case (op)
-      `EXE_BEQ,`EXE_BNE, `EXE_BGEZ, `EXE_BGTZ,`EXE_BLEZ,`EXE_BLTZ: branch <= 1'b1;
-      default:  branch <= 1'b0;
+      `EXE_BEQ: branch <= 1'b1;
+      default: branch <= 1'b0;
     endcase
   end
 
@@ -88,7 +88,7 @@ module maindec (
       `EXE_NOP: begin
         case (funct)
           // 乘除�?
-          `EXE_MULT, `EXE_MULTU, `EXE_DIV, `EXE_DIVU: regwrite <= 1'b0;
+          `EXE_MULT, `EXE_MULTU, `EXE_DIV, `EXE_DIVU, `EXE_MTHI, `EXE_MTLO: regwrite <= 1'b0;
           default: regwrite <= 1'b1;
         endcase
       end
@@ -98,7 +98,7 @@ module maindec (
       `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
       // 访存指令
       `EXE_LW, `EXE_LB, `EXE_LBU, `EXE_LH, `EXE_LHU:
-      regwrite <= 1'b1;  
+      regwrite <= 1'b1;
       default: regwrite <= 1'b0;
     endcase
   end
@@ -135,8 +135,8 @@ module maindec (
   // membyte
   always @(*) begin
     case (op)
-      `EXE_LB,`EXE_LBU, `EXE_SB: membyte <= `MEM_BYTE;
-      `EXE_LH,`EXE_LHU, `EXE_SH: membyte <= `MEM_HALFWORD;
+      `EXE_LB, `EXE_LBU, `EXE_SB: membyte <= `MEM_BYTE;
+      `EXE_LH, `EXE_LHU, `EXE_SH: membyte <= `MEM_HALFWORD;
       default: membyte <= `MEM_WORD;
     endcase
   end

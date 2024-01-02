@@ -80,7 +80,7 @@ module controller (
       functD,
       alucontrolD
   );
-
+  // todo
   assign pcsrcD = branchD & equalD;
 
   //pipeline registers

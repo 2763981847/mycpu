@@ -74,8 +74,9 @@ module datapath (
   wire [31:0] signimmE;
   wire [31:0] srcaE, srca2E, srcbE, srcb2E, srcb3E;
   wire [63:0] aluoutE;
-  wire [31:0] hiE, loE;
+
   //mem stage
+  wire [31:0] hiM, loM;
   wire [4:0] writeregM;
   wire [31:0] writedataM, realrdataM;
 
@@ -137,13 +138,14 @@ module datapath (
       srcaD,
       srcbD
   );
+  // hi/lo register
   hilo_reg hilo (
       clk,
       rst,
       aluoutE,
       hilowriteE,
-      hiE,
-      loE
+      hiM,
+      loM
   );
 
   //fetch stage logic
@@ -286,8 +288,8 @@ module datapath (
   alu alu (
       srca2E,
       srcb3E,
-      hiE,
-      loE,
+      hiM,
+      loM,
       saE,
       alucontrolE,
       aluoutE

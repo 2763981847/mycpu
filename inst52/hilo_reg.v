@@ -16,6 +16,10 @@ module hilo_reg (
       // 写入
       hi_output <= hilo_input[63:32];
       lo_output <= hilo_input[31:0];
+    end else begin
+      // 读取
+      hi_output <= hi_output;
+      lo_output <= lo_output;
     end
   end
 

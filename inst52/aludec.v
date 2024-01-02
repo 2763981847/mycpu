@@ -52,6 +52,11 @@ module aludec (
         `EXE_SLLV: alucontrol <= `EXE_SLLV_OP;  //sllv
         `EXE_SRLV: alucontrol <= `EXE_SRLV_OP;  //srlv
         `EXE_SRAV: alucontrol <= `EXE_SRAV_OP;  //srav
+        // 数据移动指令
+        `EXE_MFHI: alucontrol <= `EXE_MFHI_OP;  //mfhi
+        `EXE_MFLO: alucontrol <= `EXE_MFLO_OP;  //mflo
+        `EXE_MTHI: alucontrol <= `EXE_MTHI_OP;  //mthi
+        `EXE_MTLO: alucontrol <= `EXE_MTLO_OP;  //mtlo
         default: alucontrol <= `EXE_ADDU_OP;
       endcase
       // 逻辑运算 immediate

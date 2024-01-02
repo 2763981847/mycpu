@@ -61,6 +61,11 @@ module alu (
       `EXE_SLLV_OP: y <= b << a;
       `EXE_SRLV_OP: y <= b >> a;
       `EXE_SRAV_OP: y <= $signed(b) >>> a;
+      // 数据移动指令
+      `EXE_MFHI_OP: y <= hi;
+      `EXE_MFLO_OP: y <= lo;
+      `EXE_MTHI_OP: y <= {a, lo};
+      `EXE_MTLO_OP: y <= {hi, a};
       default: y <= 63'b0;
     endcase
   end

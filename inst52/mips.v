@@ -25,15 +25,16 @@ module mips (
     rst,
     output wire [31:0] pc,
     input wire [31:0] instr,
-    output wire memwrite,
+    output wire [3:0] memwen,
     output wire [31:0] aluout,
     writedata,
     input wire [31:0] readdata
 );
 
   wire [5:0] opD, functD;
-  wire regdstE,alusrcE,pcsrcD,memtoregE,memtoregM,memtoregW,
+  wire regdstE,alusrcE,pcsrcD,memtoregE,memtoregM,memsignextM,memtoregW,
 			regwriteE,regwriteM,regwriteW,hilowriteE,branchD,jumpD;
+  wire [1:0] membyteM;
   wire [7:0] alucontrolE;
   wire flushE, equalD;
 
@@ -61,6 +62,9 @@ module mips (
       memtoregM,
       memwrite,
       regwriteM,
+      memsignextM,
+      membyteM,
+
       //write back stage
       memtoregW,
       regwriteW
@@ -88,7 +92,11 @@ module mips (
       flushE,
       //mem stage
       memtoregM,
+      memwrite,
       regwriteM,
+      memsignextM,
+      membyteM,
+      memwen,
       aluout,
       writedata,
       readdata,

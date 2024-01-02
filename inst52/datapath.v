@@ -43,13 +43,17 @@ module datapath (
     output wire flushE,
     //mem stage
     input wire memtoregM,
+    input wire memwriteM,
     input wire regwriteM,
+    input wire memsignextM,
+    input wire [1:0] membyteM,
+    output wire [3:0] memwenM,
     output wire [31:0] aluoutM,
-    writedataM,
+    realwdataM,
     input wire [31:0] readdataM,
     //writeback stage
     input wire memtoregW,
-    input wire regwriteW
+    regwriteW
 );
 
   //fetch stage
@@ -70,11 +74,13 @@ module datapath (
   wire [31:0] signimmE;
   wire [31:0] srcaE, srca2E, srcbE, srcb2E, srcb3E;
   wire [63:0] aluoutE;
-  wire [31:0] hiE,loE;
+  wire [31:0] hiE, loE;
   //mem stage
-  wire [ 4:0] writeregM;
+  wire [4:0] writeregM;
+  wire [31:0] writedataM, realrdataM;
+
   //writeback stage
-  wire [ 4:0] writeregW;
+  wire [4:0] writeregW;
   wire [31:0] aluoutW, readdataW, resultW;
 
   //hazard detection
@@ -313,6 +319,19 @@ module datapath (
       writeregM
   );
 
+
+  mem_ctrl mc (
+      membyteM,
+      aluoutM[1:0],
+      memwriteM,
+      memsignextM,
+      writedataM,
+      readdataM,
+      memwenM,
+      realwdataM,
+      realrdataM
+  );
+
   //writeback stage
   flopr #(32) r1W (
       clk,
@@ -323,7 +342,7 @@ module datapath (
   flopr #(32) r2W (
       clk,
       rst,
-      readdataM,
+      realrdataM,
       readdataW
   );
   flopr #(5) r3W (

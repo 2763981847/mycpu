@@ -65,11 +65,10 @@ module aludec (
       `EXE_SLTI: alucontrol <= `EXE_SLTI_OP;  //slti
       `EXE_SLTIU: alucontrol <= `EXE_SLTIU_OP;  //sltiu
       // 访存指令
-      `EXE_LW, `EXE_SW: alucontrol <= `EXE_ADD_OP;  //lw, sw
+      `EXE_LW, `EXE_LB,`EXE_LBU,`EXE_LH, `EXE_LHU,`EXE_SW,`EXE_SB,`EXE_SH: alucontrol <= `EXE_ADD_OP;  
       // 跳转指令
       `EXE_J, `EXE_BEQ: alucontrol <= `EXE_ADDU_OP;  //j, beq
       default: alucontrol <= `EXE_ADDU_OP;
-
     endcase
   end
 endmodule

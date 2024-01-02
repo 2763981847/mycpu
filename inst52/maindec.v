@@ -30,13 +30,15 @@ module maindec (
     output reg regdst,
     regwrite,
     output reg jump,
-    output reg hilowrite
+    output reg hilowrite,
+    output reg memsignext,
+    output reg [1:0] membyte
 );
 
   // memtoreg
   always @(*) begin
     case (op)
-      `EXE_LW: memtoreg <= 1'b1;
+      `EXE_LW,`EXE_LB,`EXE_LBU,`EXE_LH,`EXE_LHU: memtoreg <= 1'b1;
       default: memtoreg <= 1'b0;
     endcase
   end
@@ -44,7 +46,7 @@ module maindec (
   // memwrite
   always @(*) begin
     case (op)
-      `EXE_SW: memwrite <= 1'b1;
+      `EXE_SW,`EXE_SB,`EXE_SH: memwrite <= 1'b1;
       default: memwrite <= 1'b0;
     endcase
   end
@@ -52,7 +54,7 @@ module maindec (
   // branch
   always @(*) begin
     case (op)
-      `EXE_BEQ: branch <= 1'b1;
+      `EXE_BEQ,`EXE_BNE, `EXE_BGEZ, `EXE_BGTZ,`EXE_BLEZ,`EXE_BLTZ: branch <= 1'b1;
       default:  branch <= 1'b0;
     endcase
   end
@@ -65,7 +67,7 @@ module maindec (
       // 算数运算指令 I-type
       `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
       // 访存指令
-      `EXE_LW, `EXE_SW:
+      `EXE_LW, `EXE_SW, `EXE_LB, `EXE_LBU, `EXE_LH, `EXE_LHU, `EXE_SB, `EXE_SH:
       alusrc <= 1'b1;
       default: alusrc <= 1'b0;
     endcase
@@ -85,7 +87,7 @@ module maindec (
       // R-type
       `EXE_NOP: begin
         case (funct)
-          // 乘除法
+          // 乘除�?
           `EXE_MULT, `EXE_MULTU, `EXE_DIV, `EXE_DIVU: regwrite <= 1'b0;
           default: regwrite <= 1'b1;
         endcase
@@ -95,8 +97,8 @@ module maindec (
       // 算数运算指令 I-type
       `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
       // 访存指令
-      `EXE_LW:
-      regwrite <= 1'b1;  //LW
+      `EXE_LW, `EXE_LB, `EXE_LBU, `EXE_LH, `EXE_LHU:
+      regwrite <= 1'b1;  
       default: regwrite <= 1'b0;
     endcase
   end
@@ -121,5 +123,23 @@ module maindec (
       default: hilowrite <= 1'b0;
     endcase
   end
+
+  // memsignext
+  always @(*) begin
+    case (op)
+      `EXE_LHU, `EXE_LBU: memsignext <= 1'b0;
+      default: memsignext <= 1'b1;
+    endcase
+  end
+
+  // membyte
+  always @(*) begin
+    case (op)
+      `EXE_LB,`EXE_LBU, `EXE_SB: membyte <= `MEM_BYTE;
+      `EXE_LH,`EXE_LHU, `EXE_SH: membyte <= `MEM_HALFWORD;
+      default: membyte <= `MEM_WORD;
+    endcase
+  end
+
 
 endmodule

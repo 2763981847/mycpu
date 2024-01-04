@@ -54,7 +54,7 @@ module maindec (
   // branch
   always @(*) begin
     case (op)
-      `EXE_BEQ: branch <= 1'b1;
+      `EXE_BEQ, `EXE_BNE, `EXE_BGTZ, `EXE_BLEZ, `EXE_REGIMM_INST: branch <= 1'b1;
       default: branch <= 1'b0;
     endcase
   end

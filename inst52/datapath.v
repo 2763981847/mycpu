@@ -27,12 +27,10 @@ module datapath (
     output wire [31:0] pcF,
     input wire [31:0] instrF,
     //decode stage
-    input wire pcsrcD,
-    branchD,
+    input wire [2:0] branchcontrolD,
+    input wire branchD,
     input wire jumpD,
-    output wire equalD,
-    output wire [5:0] opD,
-    functD,
+    output wire [31:0] instrD,
     //execute stage
     input wire memtoregE,
     input wire hilowriteE,
@@ -61,10 +59,10 @@ module datapath (
   //FD
   wire [31:0] pcnextFD, pcnextbrFD, pcplus4F, pcbranchD;
   //decode stage
-  wire [31:0] pcplus4D, instrD;
+  wire [31:0] pcplus4D;
   wire forwardaD, forwardbD;
   wire [4:0] rsD, rtD, rdD, saD;
-  wire flushD, stallD;
+  wire pcsrcD, flushD, stallD;
   wire [31:0] signimmD, signimmshD;
   wire [31:0] srcaD, srca2D, srcbD, srcb2D;
   //execute stage
@@ -202,14 +200,17 @@ module datapath (
       forwardbD,
       srcb2D
   );
-  eqcmp comp (
+
+
+  branch_judge bj (
       srca2D,
       srcb2D,
-      equalD
+      branchcontrolD,
+      branchD,
+      pcsrcD
   );
+  assign flushD = (pcsrcD | jumpD) & ~stallD;
 
-  assign opD = instrD[31:26];
-  assign functD = instrD[5:0];
   assign rsD = instrD[25:21];
   assign rtD = instrD[20:16];
   assign rdD = instrD[15:11];

@@ -24,11 +24,9 @@ module controller (
     input wire clk,
     rst,
     //decode stage
-    input wire [5:0] opD,
-    functD,
-    output wire pcsrcD,
-    branchD,
-    equalD,
+    input wire [31:0] instrD,
+    output wire [2:0] branchcontrolD,
+    output wire branchD,
     jumpD,
 
     //execute stage
@@ -55,11 +53,16 @@ module controller (
   wire memtoregD, memwriteD, alusrcD, regdstD, regwriteD, hilowriteD, memsignextD;
   wire [1:0] membyteD;
   wire [7:0] alucontrolD;
+  wire [5:0] opD, functD;
+  wire [4:0] rtD;
 
   //execute stage
   wire memwriteE, memsignextE;
   wire [1:0] membyteE;
 
+  assign opD = instrD[31:26];
+  assign functD = instrD[5:0];
+  assign rtD = instrD[20:16];
   maindec md (
       opD,
       functD,
@@ -80,8 +83,13 @@ module controller (
       functD,
       alucontrolD
   );
-  // todo
-  assign pcsrcD = branchD & equalD;
+
+  branchdec bd (
+      opD,
+      rtD,
+      branchcontrolD
+  );
+
 
   //pipeline registers
   floprc #(17) regE (

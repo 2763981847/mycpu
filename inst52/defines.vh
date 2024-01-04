@@ -245,6 +245,14 @@
 `define BYTE_MASK 32'h000000FF
 `define HALFWORD_MASK 32'h0000FFFF
 
+// Branch_ctrl
+`define BRANCH_EQ 3'b000
+`define BRANCH_NEQ 3'b001
+`define BRANCH_LTZ 3'b010
+`define BRANCH_LEZ 3'b011
+`define BRANCH_GTZ 3'b100
+`define BRANCH_GEZ 3'b101
+
 // //regfiles macro definition
 
 // `define RegAddrBus		4:0

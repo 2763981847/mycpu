@@ -21,14 +21,18 @@
 `include "defines.vh"
 
 module alu (
-    input  wire [31:0] a,
+    input wire clk,
+    rst,
+    input wire [31:0] a,
     b,
     hi,
     lo,
-    input  wire [ 4:0] sa,
-    input  wire [ 7:0] op,
-    output reg  [63:0] y
+    input wire [4:0] sa,
+    input wire [7:0] op,
+    output reg [63:0] y,
+    output reg div_stall
 );
+
   always @(*) begin
     case (op)
       // 逻辑运算指令 R-type
@@ -48,8 +52,7 @@ module alu (
       `EXE_SLTU_OP: y = a < b;
       `EXE_MULT_OP: y = $signed(a) * $signed(b);
       `EXE_MULTU_OP: y = {32'b0, a} * {32'b0, b};
-      `EXE_DIV_OP: y = {$signed(a) % $signed(b), $signed(a) / $signed(b)};
-      `EXE_DIVU_OP: y = {a % b, a / b};
+      `EXE_DIV_OP, `EXE_DIVU_OP: y = div_result;
       // 算术运算指令	I-type
       `EXE_ADDI_OP, `EXE_ADDIU_OP: y = a + b;
       `EXE_SLTI_OP: y = $signed(a) < $signed(b);
@@ -67,6 +70,41 @@ module alu (
       `EXE_MTHI_OP: y = {a, lo};
       `EXE_MTLO_OP: y = {hi, a};
       default: y = 63'b0;
+    endcase
+  end
+  
+  reg start_div = 1'b0, signed_div = 1'b0;
+  wire div_ready;
+  wire [63:0] div_result;
+
+  div divider (
+      clk,
+      rst,
+      signed_div,
+      a,
+      b,
+      start_div,
+      1'b0,
+      div_result,
+      div_ready
+  );
+
+  always @(*) begin
+    case (op)
+      `EXE_DIV_OP, `EXE_DIVU_OP: begin
+        signed_div = op == `EXE_DIV_OP ? 1'b1 : 1'b0;
+        if (div_ready == 1'b0) begin
+          start_div = 1'b1;
+          div_stall = 1'b1;
+        end else begin
+          start_div = 1'b0;
+          div_stall = 1'b0;
+        end
+      end
+      default: begin
+        start_div = 1'b0;
+        div_stall = 1'b0;
+      end
     endcase
   end
 endmodule

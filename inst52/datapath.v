@@ -36,7 +36,7 @@ module datapath (
   //FD
   wire [31:0] pcnextFD, pcnextbrFD, pcplus4F, pcbranchD;
   //decode stage
-  wire [31:0] pcplus4D,instrD;
+  wire [31:0] pcplus4D, instrD;
   wire forwardaD, forwardbD;
   wire [5:0] opD, functD;
   wire [4:0] rsD, rtD, rdD, saD;
@@ -47,7 +47,7 @@ module datapath (
   wire [31:0] signimmD, signimmshD;
   wire [31:0] srcaD, srca2D, srcbD, srcb2D;
   //execute stage
-  wire memtoregE, memwriteE, alusrcE, linkE, regdstE, regwriteE, hilowriteE, memsignextE;
+  wire memtoregE, memwriteE, alusrcE, linkE, regdstE, regwriteE, hilowriteE, memsignextE,div_stallE,stallE;
   wire [ 1:0] membyteE;
   wire [ 7:0] alucontrolE;
   wire [31:0] pcplus4E;
@@ -87,9 +87,11 @@ module datapath (
       writeregE,
       regwriteE,
       memtoregE,
+      div_stallE,
       forwardaE,
       forwardbE,
       flushE,
+      stallE,
       //mem stage
       writeregM,
       regwriteM,
@@ -125,6 +127,7 @@ module datapath (
       srcaD,
       srcbD
   );
+
   // hi/lo register
   hilo_reg hilo (
       clk,
@@ -149,14 +152,14 @@ module datapath (
       pcplus4F
   );
   //decode stage
-flopenrc #(64) regD (
-    clk,
-    rst,
-    ~stallD,
-    flushD,
-    {pcplus4F, instrF}, 
-    {pcplus4D, instrD}  
-);
+  flopenrc #(64) regD (
+      clk,
+      rst,
+      ~stallD,
+      flushD,
+      {pcplus4F, instrF},
+      {pcplus4D, instrD}
+  );
   signext se (
       instrD[15:0],
       signimmD
@@ -228,51 +231,52 @@ flopenrc #(64) regD (
 
 
   //execute stage
-floprc #(166) regE (
-    clk,
-    rst,
-    flushE,
-    {
-        srcaD,      // 32 bits
-        srcbD,      // 32 bits
-        signimmD,   // 32 bits
-        rsD,        // 5 bits
-        rtD,        // 5 bits
-        rdD,        // 5 bits
-        saD,        // 5 bits
-        pcplus4D,   // 32 bits
+  flopenrc #(166) regE (
+      clk,
+      rst,
+      ~stallE,
+      flushE,
+      {
+        srcaD,  // 32 bits
+        srcbD,  // 32 bits
+        signimmD,  // 32 bits
+        rsD,  // 5 bits
+        rtD,  // 5 bits
+        rdD,  // 5 bits
+        saD,  // 5 bits
+        pcplus4D,  // 32 bits
         memtoregD,  // 1 bit
         memwriteD,  // 1 bit
-        alusrcD,    // 1 bit
-        linkD,      // 1 bit
-        regdstD,    // 1 bit
+        alusrcD,  // 1 bit
+        linkD,  // 1 bit
+        regdstD,  // 1 bit
         regwriteD,  // 1 bit
-        alucontrolD,// 8 bits
-        hilowriteD, // 1 bit
-        memsignextD,// 1 bit
-        membyteD    // 2 bits
-    },
-    {
-        srcaE,      
-        srcbE,      
-        signimmE,   
-        rsE,        
-        rtE,        
-        rdE,        
-        saE,        
-        pcplus4E,   
-        memtoregE,  
-        memwriteE,  
-        alusrcE,    
-        linkE,      
-        regdstE,    
-        regwriteE,  
+        alucontrolD,  // 8 bits
+        hilowriteD,  // 1 bit
+        memsignextD,  // 1 bit
+        membyteD  // 2 bits
+      },
+      {
+        srcaE,
+        srcbE,
+        signimmE,
+        rsE,
+        rtE,
+        rdE,
+        saE,
+        pcplus4E,
+        memtoregE,
+        memwriteE,
+        alusrcE,
+        linkE,
+        regdstE,
+        regwriteE,
         alucontrolE,
-        hilowriteE, 
+        hilowriteE,
         memsignextE,
-        membyteE    
-    }
-);
+        membyteE
+      }
+  );
   mux3 #(32) forwardaemux (
       srcaE,
       resultW,
@@ -301,13 +305,16 @@ floprc #(166) regE (
       srcb3E
   );
   alu alu (
+      clk,
+      rst,
       srca3E,
       srcb3E,
       hiM,
       loM,
       saE,
       alucontrolE,
-      aluoutE
+      aluoutE,
+      div_stallE
   );
 
   mux2 #(5) wrmux2 (
@@ -327,30 +334,30 @@ floprc #(166) regE (
 
 
   //mem stage
-flopr #(75) regM (
-    clk,
-    rst,
-    {
-        srcb2E,     // 32 bits
-        aluoutE,    // 32 bits
+  flopr #(75) regM (
+      clk,
+      rst,
+      {
+        srcb2E,  // 32 bits
+        aluoutE,  // 32 bits
         writeregE,  // 5 bits
         memtoregE,  // 1 bit
         memwriteE,  // 1 bit
         regwriteE,  // 1 bit
-        memsignextE,// 1 bit
-        membyteE    // 2 bits
-    },
-    {
-        writedataM, // 32 bits
-        aluoutM,    // 32 bits
+        memsignextE,  // 1 bit
+        membyteE  // 2 bits
+      },
+      {
+        writedataM,  // 32 bits
+        aluoutM,  // 32 bits
         writeregM,  // 5 bits
         memtoregM,  // 1 bit
         memwriteM,  // 1 bit
         regwriteM,  // 1 bit
-        memsignextM,// 1 bit
-        membyteM    // 2 bits
-    }
-);
+        memsignextM,  // 1 bit
+        membyteM  // 2 bits
+      }
+  );
 
   mem_ctrl mc (
       membyteM,
@@ -365,24 +372,24 @@ flopr #(75) regM (
   );
 
   //writeback stage
-flopr #(71) regW (
-    clk,
-    rst,
-    {
-        aluoutM,    // 32 bits
-        realrdataM, // 32 bits
+  flopr #(71) regW (
+      clk,
+      rst,
+      {
+        aluoutM,  // 32 bits
+        realrdataM,  // 32 bits
         writeregM,  // 5 bits
         memtoregM,  // 1 bit
-        regwriteM   // 1 bit
-    },
-    {
-        aluoutW,    // 32 bits
+        regwriteM  // 1 bit
+      },
+      {
+        aluoutW,  // 32 bits
         readdataW,  // 32 bits
         writeregW,  // 5 bits
         memtoregW,  // 1 bit
-        regwriteW   // 1 bit
-    }
-);
+        regwriteW  // 1 bit
+      }
+  );
   mux2 #(32) resmux (
       aluoutW,
       readdataW,

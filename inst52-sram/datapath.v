@@ -23,12 +23,22 @@
 module datapath (
     input wire clk,
     rst,
+    input wire [5:0] ext_int,
+    //inst
     output wire [31:0] pcF,
+    output wire inst_enF,
     input wire [31:0] instrF,
-    output wire [3:0] memwenM,
-    output wire [31:0] aluoutM,
-    realwdataM,
-    input wire [31:0] readdataM
+    //data
+    output wire mem_enM,
+    output wire [31:0] mem_addrM,
+    input wire [31:0] mem_rdataM,
+    output wire [3:0] mem_wenM,
+    output wire [31:0] mem_wdataM,
+    //debug
+    output wire [31:0] debug_wb_pc,
+    output wire [3:0] debug_wb_rf_wen,
+    output wire [4:0] debug_wb_rf_wnum,
+    output wire [31:0] debug_wb_rf_wdata
 );
 
   //fetch stage
@@ -413,6 +423,13 @@ module datapath (
       memtoregW,
       resultW
   );
+
+  assign debug_wb_pc = pcW;
+  assign debug_wb_rf_wen = {4{regwriteW}};
+  assign debug_wb_rf_wnum = writeregW;
+  assign debug_wb_rf_wdata = resultW;
+
+
 
 
 

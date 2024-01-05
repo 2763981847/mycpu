@@ -29,24 +29,24 @@ module branchdec (
 	always @(*) begin
 		case(op)
 			`EXE_BEQ:
-                branchcontrol <= `BRANCH_EQ;
+                branchcontrol = `BRANCH_EQ;
             `EXE_BNE:
-                branchcontrol <= `BRANCH_NEQ;
+                branchcontrol = `BRANCH_NEQ;
             `EXE_BGTZ:
-                branchcontrol <= `BRANCH_GTZ;
+                branchcontrol = `BRANCH_GTZ;
             `EXE_BLEZ:   
-                branchcontrol <= `BRANCH_LEZ;
+                branchcontrol = `BRANCH_LEZ;
             `EXE_REGIMM_INST:   //bltz, bltzal, bgez, bgezal
                 case(rt)
                     `EXE_BLTZ, `EXE_BLTZAL:      
-                        branchcontrol <= `BRANCH_LEZ;
+                        branchcontrol = `BRANCH_LEZ;
                     `EXE_BGEZ,`EXE_BGEZAL:
-                        branchcontrol <= `BRANCH_GEZ;
+                        branchcontrol = `BRANCH_GEZ;
                     default:
-                        branchcontrol <= 3'b000; 
+                        branchcontrol = 3'b000; 
                 endcase
 			default:
-				branchcontrol <= 3'b000;
+				branchcontrol = 3'b000;
 		endcase	
 	end
 endmodule

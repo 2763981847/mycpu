@@ -18,7 +18,7 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-
+`include "defines.vh"
 
 module datapath (
     input wire clk,
@@ -30,11 +30,13 @@ module datapath (
     input wire [2:0] branchcontrolD,
     input wire branchD,
     input wire jumpD,
+    input wire regjumpD,
     output wire [31:0] instrD,
     //execute stage
     input wire memtoregE,
     input wire hilowriteE,
     input wire alusrcE,
+    linkE,
     regdstE,
     input wire regwriteE,
     input wire [7:0] alucontrolE,
@@ -66,11 +68,12 @@ module datapath (
   wire [31:0] signimmD, signimmshD;
   wire [31:0] srcaD, srca2D, srcbD, srcb2D;
   //execute stage
+  wire [31:0] pcplus4E;
   wire [1:0] forwardaE, forwardbE;
   wire [4:0] rsE, rtE, rdE, saE;
-  wire [ 4:0] writeregE;
+  wire [ 4:0] writeregE1, writeregE;
   wire [31:0] signimmE;
-  wire [31:0] srcaE, srca2E, srcbE, srcb2E, srcb3E;
+  wire [31:0] srcaE, srca2E,srca3E, srcbE, srcb2E, srcb3E;
   wire [63:0] aluoutE;
 
   //mem stage
@@ -118,10 +121,11 @@ module datapath (
       pcsrcD,
       pcnextbrFD
   );
-  mux2 #(32) pcmux (
-      pcnextbrFD,
+  mux3 #(32) pcmux (
       {pcplus4D[31:28], instrD[25:0], 2'b00},
-      jumpD,
+      srca2D,
+      pcnextbrFD,
+      {~jumpD,regjumpD},
       pcnextFD
   );
 
@@ -209,7 +213,6 @@ module datapath (
       branchD,
       pcsrcD
   );
-  assign flushD = (pcsrcD | jumpD) & ~stallD;
 
   assign rsD = instrD[25:21];
   assign rtD = instrD[20:16];
@@ -266,12 +269,25 @@ module datapath (
       saD,
       saE
   );
+  floprc #(32) r8E (
+      clk,
+      rst,
+      flushE,
+      pcplus4D,
+      pcplus4E
+  );
   mux3 #(32) forwardaemux (
       srcaE,
       resultW,
       aluoutM,
       forwardaE,
       srca2E
+  );
+  mux2 #(32) srcamux (
+      srca2E,
+      pcplus4E,
+      linkE,
+      srca3E
   );
   mux3 #(32) forwardbemux (
       srcbE,
@@ -280,14 +296,15 @@ module datapath (
       forwardbE,
       srcb2E
   );
-  mux2 #(32) srcbmux (
+  mux3 #(32) srcbmux (
       srcb2E,
+      32'b100,
       signimmE,
-      alusrcE,
+      {alusrcE,linkE},
       srcb3E
   );
   alu alu (
-      srca2E,
+      srca3E,
       srcb3E,
       hiM,
       loM,
@@ -295,12 +312,22 @@ module datapath (
       alucontrolE,
       aluoutE
   );
-  mux2 #(5) wrmux (
+
+  mux2 #(5) wrmux2 (
       rtE,
+      `REG_RA,
+      linkE,
+      writeregE1
+  );
+
+  mux2 #(5) wrmux (
+      writeregE1,
       rdE,
       regdstE,
       writeregE
   );
+
+  
 
   //mem stage
   flopr #(32) r1M (

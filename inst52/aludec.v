@@ -57,6 +57,8 @@ module aludec (
         `EXE_MFLO: alucontrol <= `EXE_MFLO_OP;  //mflo
         `EXE_MTHI: alucontrol <= `EXE_MTHI_OP;  //mthi
         `EXE_MTLO: alucontrol <= `EXE_MTLO_OP;  //mtlo
+        // 跳转指令
+        `EXE_JALR: alucontrol <= `EXE_ADDU_OP;  //jalr
         default: alucontrol <= `EXE_ADDU_OP;
       endcase
       // 逻辑运算 immediate
@@ -72,7 +74,7 @@ module aludec (
       // 访存指令
       `EXE_LW, `EXE_LB,`EXE_LBU,`EXE_LH, `EXE_LHU,`EXE_SW,`EXE_SB,`EXE_SH: alucontrol <= `EXE_ADD_OP;  
       // 跳转指令
-      `EXE_J, `EXE_BEQ: alucontrol <= `EXE_ADDU_OP;  //j, beq
+      `EXE_JAL,`EXE_REGIMM_INST: alucontrol <= `EXE_ADDU_OP;  // jal, jalr, bltzal, bgezal
       default: alucontrol <= `EXE_ADDU_OP;
     endcase
   end

@@ -33,8 +33,8 @@ module mips (
 
   wire [31:0] instrD;
   wire [ 2:0] branchcontrolD;
-  wire regdstE,alusrcE,pcsrcD,memtoregE,memtoregM,memsignextM,memtoregW,
-			regwriteE,regwriteM,regwriteW,hilowriteE,branchD,jumpD;
+  wire regdstE,alusrcE,linkE,pcsrcD,memtoregE,memtoregM,memsignextM,memtoregW,
+			regwriteE,regwriteM,regwriteW,hilowriteE,branchD,jumpD,regjumpD;
   wire [1:0] membyteM;
   wire [7:0] alucontrolE;
   wire flushE;
@@ -47,11 +47,13 @@ module mips (
       branchcontrolD,
       branchD,
       jumpD,
+      regjumpD,
 
       //execute stage
       flushE,
       memtoregE,
       alusrcE,
+      linkE,
       regdstE,
       regwriteE,
       alucontrolE,
@@ -78,11 +80,13 @@ module mips (
       branchcontrolD,
       branchD,
       jumpD,
+      regjumpD,
       instrD,
       //execute stage
       memtoregE,
       hilowriteE,
       alusrcE,
+      linkE,
       regdstE,
       regwriteE,
       alucontrolE,

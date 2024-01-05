@@ -21,8 +21,7 @@
 
 `include "defines.vh"
 module maindec (
-    input wire [5:0] op,
-    funct,
+    input wire [31:0] instr,
     output reg memtoreg,
     memwrite,
     output reg branch,
@@ -30,10 +29,18 @@ module maindec (
     output reg regdst,
     regwrite,
     output reg jump,
+    output reg regjump,
+    output reg link,
     output reg hilowrite,
     output reg memsignext,
     output reg [1:0] membyte
 );
+
+  wire [5:0] op, funct;
+  wire [4:0] rt;
+  assign op = instr[31:26];
+  assign funct = instr[5:0];
+  assign rt = instr[20:16];
 
   // memtoreg
   always @(*) begin
@@ -87,7 +94,7 @@ module maindec (
       // R-type
       `EXE_NOP: begin
         case (funct)
-          // 乘除�?
+          // 乘除�??
           `EXE_MULT, `EXE_MULTU, `EXE_DIV, `EXE_DIVU, `EXE_MTHI, `EXE_MTLO: regwrite <= 1'b0;
           default: regwrite <= 1'b1;
         endcase
@@ -97,8 +104,16 @@ module maindec (
       // 算数运算指令 I-type
       `EXE_ADDI, `EXE_ADDIU, `EXE_SLTI, `EXE_SLTIU,
       // 访存指令
-      `EXE_LW, `EXE_LB, `EXE_LBU, `EXE_LH, `EXE_LHU:
+      `EXE_LW, `EXE_LB, `EXE_LBU, `EXE_LH, `EXE_LHU,
+      // 跳转指令
+      `EXE_JAL:
       regwrite <= 1'b1;
+      `EXE_REGIMM_INST: begin
+        case (rt)
+          `EXE_BLTZAL, `EXE_BGEZAL: regwrite <= 1'b1;
+          default: regwrite <= 1'b0;
+        endcase
+      end
       default: regwrite <= 1'b0;
     endcase
   end
@@ -106,10 +121,45 @@ module maindec (
   // jump
   always @(*) begin
     case (op)
-      `EXE_J:  jump <= 1'b1;
+      `EXE_NOP: begin
+        case (funct)
+          `EXE_JALR, `EXE_JR: jump <= 1'b1;
+          default: jump <= 1'b0;
+        endcase
+      end
+      `EXE_J, `EXE_JAL: jump <= 1'b1;
       default: jump <= 1'b0;
     endcase
   end
+
+  // regjump
+  always @(*) begin
+    case (op)
+      `EXE_NOP: begin
+        case (funct)
+          `EXE_JALR, `EXE_JR: regjump <= 1'b1;
+          default: regjump <= 1'b0;
+        endcase
+      end
+      default:  regjump <= 1'b0;
+    endcase
+  end
+
+  // link
+  always @(*) begin
+    case (op)
+      `EXE_NOP: link <= funct == `EXE_JALR;
+      `EXE_JAL: link <= 1'b1;
+      `EXE_REGIMM_INST: begin
+        case (rt)
+          `EXE_BLTZAL, `EXE_BGEZAL: link <= 1'b1;
+          default: link <= 1'b0;
+        endcase
+      end
+      default:  link <= 1'b0;
+    endcase
+  end
+
 
   // hilowrite
   always @(*) begin

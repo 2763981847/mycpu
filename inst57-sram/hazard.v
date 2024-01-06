@@ -91,23 +91,23 @@ module hazard (
   end
 
   //stalls
-  assign #1 lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
-  assign #1 branchstallD = branchD &
+  assign  lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
+  assign  branchstallD = branchD &
 				(regwriteE & 
 				(writeregE == rsD | writeregE == rtD) |
 				memtoregM &
 				(writeregM == rsD | writeregM == rtD));
-  assign #1 jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
-  assign #1 flushD = flush_exceptionM;
-  assign #1 stallD = lwstallD | branchstallD | jumpstallD | div_stallE;
-  assign #1 stallF = stallD & ~flush_exceptionM;
+  assign  jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
+  assign  flushD = flush_exceptionM;
+  assign  stallD = lwstallD | branchstallD | jumpstallD | div_stallE;
+  assign  stallF = stallD & ~flush_exceptionM;
 
-  assign #1 flushE = flush_exceptionM | (stallD & ~div_stallE);
-  assign #1 stallE = stallD;
+  assign  flushE = flush_exceptionM | (stallD & ~div_stallE);
+  assign  stallE = stallD;
 
-  assign #1 flushM = flush_exceptionM;
+  assign  flushM = flush_exceptionM;
 
-  assign #1 flushW = flush_exceptionM;
+  assign  flushW = flush_exceptionM;
 
   //stalling D stalls all previous stages
   // assign flushE = lwstallD | branchstallD;

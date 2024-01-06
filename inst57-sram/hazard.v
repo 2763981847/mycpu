@@ -31,6 +31,7 @@ module hazard (
     output wire forwardaD,
     forwardbD,
     output wire stallD,
+    output wire flushD,
     //execute stage
     input wire [4:0] rsE,
     rtE,
@@ -43,14 +44,17 @@ module hazard (
     output wire flushE,
     stallE,
     //mem stage
+    input wire flush_exceptionM,
     input wire [4:0] writeregM,
     input wire regwriteM,
     input wire memtoregM,
+    output wire flushM,
 
 
     //write back stage
     input wire [4:0] writeregW,
-    input wire regwriteW
+    input wire regwriteW,
+    output wire flushW
 );
 
   wire lwstallD, branchstallD, jumpstallD;
@@ -87,17 +91,23 @@ module hazard (
   end
 
   //stalls
-  assign lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
-  assign  branchstallD = branchD &
+  assign #1 lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
+  assign #1 branchstallD = branchD &
 				(regwriteE & 
 				(writeregE == rsD | writeregE == rtD) |
 				memtoregM &
 				(writeregM == rsD | writeregM == rtD));
-  assign jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
-  assign stallD = lwstallD | branchstallD | jumpstallD | div_stallE;
-  assign stallF = stallD;
-  assign stallE = div_stallE;
-  assign flushE = stallD & ~div_stallE;
+  assign #1 jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
+  assign #1 flushD = flush_exceptionM;
+  assign #1 stallD = lwstallD | branchstallD | jumpstallD | div_stallE;
+  assign #1 stallF = stallD & ~flush_exceptionM;
+
+  assign #1 flushE = flush_exceptionM | (stallD & ~div_stallE);
+  assign #1 stallE = stallD;
+
+  assign #1 flushM = flush_exceptionM;
+
+  assign #1 flushW = flush_exceptionM;
 
   //stalling D stalls all previous stages
   // assign flushE = lwstallD | branchstallD;

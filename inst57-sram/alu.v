@@ -30,12 +30,15 @@ module alu (
     input wire [4:0] sa,
     input wire [7:0] op,
     output reg [63:0] y,
-    output reg div_stall
+    output reg div_stall,
+    output wire overflow
 );
 
   reg start_div = 1'b0, signed_div = 1'b0;
   wire div_ready;
   wire [63:0] div_result;
+  assign overflow = (op == `EXE_ADD_OP && ((a[31] & b[31] & ~y[31]) | (~a[31] & ~b[31] & y[31]))) | 
+                  (op == `EXE_SUB_OP && ((a[31] & ~b[31] & ~y[31]) | (~a[31] & b[31] & y[31])));
 
   always @(*) begin
     case (op)
@@ -56,7 +59,7 @@ module alu (
       `EXE_SLT_OP: y = $signed(a) < $signed(b);
       `EXE_SLTU_OP: y = a < b;
       `EXE_MULT_OP: y = $signed(a) * $signed(b);
-      `EXE_MULTU_OP: y = {32'b0, a} * {32'b0, b};
+      `EXE_MULTU_OP: y = a * b;
       `EXE_DIV_OP, `EXE_DIVU_OP: y = div_result;
       // 算术运算指令	I-type
       `EXE_ADDI_OP, `EXE_ADDIU_OP: y = a + b;
@@ -74,6 +77,8 @@ module alu (
       `EXE_MFLO_OP: y = lo;
       `EXE_MTHI_OP: y = {a, lo};
       `EXE_MTLO_OP: y = {hi, a};
+      // 特权指令
+      `EXE_MTC0_OP: y = b;
       default: y = 63'b0;
     endcase
   end

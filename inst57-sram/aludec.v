@@ -19,7 +19,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 `include "defines.vh"
-
+`include "defines2.vh"
 module aludec (
     input  wire [5:0] opD,
     functD,
@@ -75,6 +75,8 @@ module aludec (
       `EXE_LW, `EXE_LB,`EXE_LBU,`EXE_LH, `EXE_LHU,`EXE_SW,`EXE_SB,`EXE_SH: alucontrol = `EXE_ADD_OP;  
       // 跳转指令
       `EXE_JAL,`EXE_REGIMM_INST: alucontrol = `EXE_ADDU_OP;  // jal, jalr, bltzal, bgezal
+      // 特权指令
+      `SPECIAL3_INST: alucontrol = `EXE_MTC0_OP;
       default: alucontrol = `EXE_ADDU_OP;
     endcase
   end

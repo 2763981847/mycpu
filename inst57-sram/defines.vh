@@ -70,7 +70,7 @@
 `define EXE_DIV 6'b011010
 `define EXE_DIVU 6'b011011
 //J type
- //`EXE_BNE, `EXE_BGEZ, `EXE_BGTZ, `EXE_BLEZ, `EXE_BLTZ
+//`EXE_BNE, `EXE_BGEZ, `EXE_BGTZ, `EXE_BLEZ, `EXE_BLTZ
 `define EXE_J 6'b000010
 `define EXE_JAL 6'b000011
 `define EXE_JALR 6'b001001
@@ -275,3 +275,23 @@
 // `define CP0_REG_EPC    5'b01110          //可读写
 // `define CP0_REG_PRID    5'b01111         //只读
 // `define CP0_REG_CONFIG    5'b10000       //只读
+
+//Exception code
+`define EXC_CODE_INT 5'h00     
+`define EXC_CODE_ADEL 5'h04     
+`define EXC_CODE_ADES 5'h05     
+`define EXC_CODE_SYS 5'h08     
+`define EXC_CODE_BP 5'h09     
+`define EXC_CODE_RI 5'h0a     
+`define EXC_CODE_OV 5'h0c     
+
+//Exception type
+`define EXC_TYPE_INT 32'h0000_0001  
+`define EXC_TYPE_ADEL 32'h0000_0004  
+`define EXC_TYPE_ADES 32'h0000_0005  
+`define EXC_TYPE_SYS 32'h0000_0008  
+`define EXC_TYPE_BP 32'h0000_0009  
+`define EXC_TYPE_RI 32'h0000_000a  
+`define EXC_TYPE_OV 32'h0000_000c  
+`define EXC_TYPE_ERET 32'h0000_000e  
+`define EXC_TYPE_NOEXC 32'h0000_0000

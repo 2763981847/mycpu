@@ -22,6 +22,7 @@
 
 module hazard (
     //fetch stage
+    input wire i_stall,
     output wire stallF,
     //decode stage
     input wire [4:0] rsD,
@@ -44,20 +45,22 @@ module hazard (
     output wire flushE,
     stallE,
     //mem stage
+    input wire d_stall,
     input wire flush_exceptionM,
     input wire [4:0] writeregM,
     input wire regwriteM,
     input wire memtoregM,
     output wire flushM,
-
+    output wire stallM,
 
     //write back stage
     input wire [4:0] writeregW,
     input wire regwriteW,
-    output wire flushW
+    output wire flushW,
+    output wire stallW
 );
 
-  wire lwstallD, branchstallD, jumpstallD;
+  wire lwstallD, branchstallD, jumpstallD, longest_stall;
 
   //forwarding sources to D stage (branch equality)
   assign forwardaD = (rsD != 0 & rsD == writeregM & regwriteM);
@@ -91,23 +94,32 @@ module hazard (
   end
 
   //stalls
-  assign  lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
-  assign  branchstallD = branchD &
+  assign lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
+  assign branchstallD = branchD &
 				(regwriteE & 
 				(writeregE == rsD | writeregE == rtD) |
 				memtoregM &
 				(writeregM == rsD | writeregM == rtD));
-  assign  jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
-  assign  flushD = flush_exceptionM;
-  assign  stallD = lwstallD | branchstallD | jumpstallD | div_stallE;
-  assign  stallF = stallD & ~flush_exceptionM;
+  assign jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
 
-  assign  flushE = flush_exceptionM | (stallD & ~div_stallE);
-  assign  stallE = stallD;
 
-  assign  flushM = flush_exceptionM;
+  // assign stallF = stallD & ~flush_exceptionM;
+  // assign stallD = stallE | i_stall | branchstallD | jumpstallD;
+  // assign stallE = stallM | lwstallD;
+  // assign stallM = stallW | div_stallE;
+  // assign stallW = d_stall;
 
-  assign  flushW = flush_exceptionM;
+  assign longest_stall = i_stall | d_stall | div_stallE;
+  assign stallF = stallD & ~flush_exceptionM;
+  assign stallD = stallE | branchstallD | jumpstallD | lwstallD;
+  assign stallE = stallM;
+  assign stallM = stallW;
+  assign stallW = longest_stall;
+
+  assign flushD = flush_exceptionM;
+  assign flushE = flush_exceptionM | (stallD & ~stallE);
+  assign flushM = flush_exceptionM;
+  assign flushW = flush_exceptionM;
 
   //stalling D stalls all previous stages
   // assign flushE = lwstallD | branchstallD;

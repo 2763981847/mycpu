@@ -1,88 +1,165 @@
+// 结构
+//              -------------------------------- mycpu_top.v
+//              |                              |
+//              |          mips core           |
+//              |                              |
+//              |  sram-like          sram-like|
+//              --------------------------------
+//                  |                     | 
+//           ----------------        ------------         1x2 bridge
+//           |  i cache	    |		  |	       |  
+//           |  	     	|		  |	   |d cache|  
+//           ----------------         |        |
+//                 |                 ------------         2x1 bridge
+//                 | sram-like            | sram-like
+//           ---------------------------------------
+//           |    	cpu_axi_interface(longsoon)    |
+//           |    								   |
+//           ---------------------------------------
+//          			        | axi
+
 module mycpu_top (
-    input wire [5:0] ext_int,
+    input [5:0] ext_int,  //high active  //input
+
     input wire aclk,
-    aresetn,
+    input wire aresetn, //low active
 
-    // axi port
-    //ar
-    output wire [ 3:0] arid,     //read request id, fixed 4'b0
-    output wire [31:0] araddr,   //read request address
-    output wire [ 7:0] arlen,    //read request transfer length(beats), fixed 4'b0
-    output wire [ 2:0] arsize,   //read request transfer size(bytes per beats)
-    output wire [ 1:0] arburst,  //transfer type, fixed 2'b01
-    output wire [ 1:0] arlock,   //atomic lock, fixed 2'b0
-    output wire [ 3:0] arcache,  //cache property, fixed 4'b0
-    output wire [ 2:0] arprot,   //protect property, fixed 3'b0
-    output wire        arvalid,  //read request address valid
-    input  wire        arready,  //slave end ready to receive address transfer
-    //r              
-    input  wire [ 3:0] rid,      //equal to arid, can be ignored
-    input  wire [31:0] rdata,    //read data
-    input  wire [ 1:0] rresp,    //this read request finished successfully, can be ignored
-    input  wire        rlast,    //the last beat data for this request, can be ignored
-    input  wire        rvalid,   //read data valid
-    output wire        rready,   //master end ready to receive data transfer
-    //aw           
-    output wire [ 3:0] awid,     //write request id, fixed 4'b0
-    output wire [31:0] awaddr,   //write request address
-    output wire [ 3:0] awlen,    //write request transfer length(beats), fixed 4'b0
-    output wire [ 2:0] awsize,   //write request transfer size(bytes per beats)
-    output wire [ 1:0] awburst,  //transfer type, fixed 2'b01
-    output wire [ 1:0] awlock,   //atomic lock, fixed 2'b01
-    output wire [ 3:0] awcache,  //cache property, fixed 4'b01
-    output wire [ 2:0] awprot,   //protect property, fixed 3'b01
-    output wire        awvalid,  //write request address valid
-    input  wire        awready,  //slave end ready to receive address transfer
-    //w          
-    output wire [ 3:0] wid,      //equal to awid, fixed 4'b0
-    output wire [31:0] wdata,    //write data
-    output wire [ 3:0] wstrb,    //write data strobe select bit
-    output wire        wlast,    //the last beat data signal, fixed 1'b1
-    output wire        wvalid,   //write data valid
-    input  wire        wready,   //slave end ready to receive data transfer
-    //b              
-    input  wire [ 3:0] bid,      //equal to wid,awid, can be ignored
-    input  wire [ 1:0] bresp,    //this write request finished successfully, can be ignored
-    input  wire        bvalid,   //write data valid
-    output wire        bready,   //master end ready to receive write response
+    output wire [3:0] arid,
+    output wire [31:0] araddr,
+    output wire [7:0] arlen,
+    output wire [2:0] arsize,
+    output wire [1:0] arburst,
+    output wire [1:0] arlock,
+    output wire [3:0] arcache,
+    output wire [2:0] arprot,
+    output wire arvalid,
+    input wire arready,
 
-    //debug signals
-    output wire [ 31:0] debug_wb_pc,
-    output wire [3 : 0] debug_wb_rf_wen,
-    output wire [4 : 0] debug_wb_rf_wnum,
-    output wire [ 31:0] debug_wb_rf_wdata
+    input wire [3:0] rid,
+    input wire [31:0] rdata,
+    input wire [1:0] rresp,
+    input wire rlast,
+    input wire rvalid,
+    output wire rready,
+
+    output wire [3:0] awid,
+    output wire [31:0] awaddr,
+    output wire [7:0] awlen,
+    output wire [2:0] awsize,
+    output wire [1:0] awburst,
+    output wire [1:0] awlock,
+    output wire [3:0] awcache,
+    output wire [2:0] awprot,
+    output wire awvalid,
+    input wire awready,
+
+    output wire [3:0] wid,
+    output wire [31:0] wdata,
+    output wire [3:0] wstrb,
+    output wire wlast,
+    output wire wvalid,
+    input wire wready,
+
+    input wire [3:0] bid,
+    input wire [1:0] bresp,
+    input bvalid,
+    output bready,
+
+    //debug interface
+    output wire [31:0] debug_wb_pc,
+    output wire [ 3:0] debug_wb_rf_wen,
+    output wire [ 4:0] debug_wb_rf_wnum,
+    output wire [31:0] debug_wb_rf_wdata
 );
-  //datapath传出来的信号
-  wire        inst_en;
-  wire [31:0] inst_vaddr;
-  wire [31:0] inst_rdata;
+  wire clk, rst;
+  assign clk = aclk;
+  assign rst = ~aresetn;
 
-  wire        data_en;
-  wire [31:0] data_vaddr;
-  wire [31:0] data_rdata;
-  wire [ 3:0] data_wen;
-  wire [31:0] data_wdata;
-  wire        d_cache_stall;
+  wire        cpu_inst_req;
+  wire [31:0] cpu_inst_addr;
+  wire        cpu_inst_wr;
+  wire [ 1:0] cpu_inst_size;
+  wire [31:0] cpu_inst_wdata;
+  wire [31:0] cpu_inst_rdata;
+  wire        cpu_inst_addr_ok;
+  wire        cpu_inst_data_ok;
 
-  wire [31:0] inst_paddr;
-  wire [31:0] data_paddr;
+  wire        cpu_data_req;
+  wire [31:0] cpu_data_addr;
+  wire        cpu_data_wr;
+  wire [ 1:0] cpu_data_size;
+  wire [31:0] cpu_data_wdata;
+  wire [31:0] cpu_data_rdata;
+  wire        cpu_data_addr_ok;
+  wire        cpu_data_data_ok;
 
-  datapath datapath (
-      .clk(aclk),
-      .rst(~aresetn),  /*时钟取反，因此iram和dram可以当周期取回数据*/
+  wire        cache_inst_req;
+  wire [31:0] cache_inst_addr;
+  wire        cache_inst_wr;
+  wire [ 1:0] cache_inst_size;
+  wire [31:0] cache_inst_wdata;
+  wire [31:0] cache_inst_rdata;
+  wire        cache_inst_addr_ok;
+  wire        cache_inst_data_ok;
+
+  wire        cache_data_req;
+  wire [31:0] cache_data_addr;
+  wire        cache_data_wr;
+  wire [ 1:0] cache_data_size;
+  wire [31:0] cache_data_wdata;
+  wire [31:0] cache_data_rdata;
+  wire        cache_data_addr_ok;
+  wire        cache_data_data_ok;
+
+  wire        ram_data_req;
+  wire [31:0] ram_data_addr;
+  wire        ram_data_wr;
+  wire [ 1:0] ram_data_size;
+  wire [31:0] ram_data_wdata;
+  wire [31:0] ram_data_rdata;
+  wire        ram_data_addr_ok;
+  wire        ram_data_data_ok;
+
+  wire        conf_data_req;
+  wire [31:0] conf_data_addr;
+  wire        conf_data_wr;
+  wire [ 1:0] conf_data_size;
+  wire [31:0] conf_data_wdata;
+  wire [31:0] conf_data_rdata;
+  wire        conf_data_addr_ok;
+  wire        conf_data_data_ok;
+
+  wire        wrap_data_req;
+  wire [31:0] wrap_data_addr;
+  wire        wrap_data_wr;
+  wire [ 1:0] wrap_data_size;
+  wire [31:0] wrap_data_wdata;
+  wire [31:0] wrap_data_rdata;
+  wire        wrap_data_addr_ok;
+  wire        wrap_data_data_ok;
+
+  mips mips (
+      .clk(clk),
+      .rst(rst),
       .ext_int(ext_int),
 
-      //inst
-      .pcF(inst_vaddr),
-      .inst_enF(inst_en),
-      .instrF(inst_rdata),
+      .inst_req    (cpu_inst_req),
+      .inst_wr     (cpu_inst_wr),
+      .inst_addr   (cpu_inst_addr),
+      .inst_size   (cpu_inst_size),
+      .inst_wdata  (cpu_inst_wdata),
+      .inst_rdata  (cpu_inst_rdata),
+      .inst_addr_ok(cpu_inst_addr_ok),
+      .inst_data_ok(cpu_inst_data_ok),
 
-      //data
-      .mem_enM(data_en),
-      .mem_addrM(data_vaddr),
-      .mem_rdataM(data_rdata),
-      .mem_wenM(data_wen),
-      .mem_wdataM(data_wdata),
+      .data_req    (cpu_data_req),
+      .data_wr     (cpu_data_wr),
+      .data_addr   (cpu_data_addr),
+      .data_wdata  (cpu_data_wdata),
+      .data_size   (cpu_data_size),
+      .data_rdata  (cpu_data_rdata),
+      .data_addr_ok(cpu_data_addr_ok),
+      .data_data_ok(cpu_data_data_ok),
 
       .debug_wb_pc      (debug_wb_pc),
       .debug_wb_rf_wen  (debug_wb_rf_wen),
@@ -90,123 +167,190 @@ module mycpu_top (
       .debug_wb_rf_wdata(debug_wb_rf_wdata)
   );
 
+  wire [31:0] cpu_inst_paddr;
+  wire [31:0] cpu_data_paddr;
+  wire no_dcache;
+
+  //将虚拟地址转换成物理地址，并判断是否需要经过Data Cache
   mmu mmu (
-      .inst_vaddr(inst_vaddr),
-      .inst_paddr(inst_paddr),
-      .data_vaddr(data_vaddr),
-      .data_paddr(data_paddr)
+      .inst_vaddr(cpu_inst_addr),
+      .inst_paddr(cpu_inst_paddr),
+      .data_vaddr(cpu_data_addr),
+      .data_paddr(cpu_data_paddr),
+      .no_dcache (no_dcache)
   );
 
-  assign inst_sram_en = inst_en;
-  assign inst_sram_wen = 4'b0;
-  assign inst_sram_addr = inst_paddr;
-  assign inst_sram_wdata = 32'b0;
-  assign inst_rdata = inst_sram_rdata;
+  //根据是否经过Cache，将信号分为两路
+  bridge_1x2 bridge_1x2 (
+      .no_dcache(no_dcache),
 
-  assign data_sram_en = data_en;
-  assign data_sram_wen = data_wen;
-  assign data_sram_addr = data_paddr;
-  assign data_sram_wdata = data_wdata;
-  assign data_rdata = data_sram_rdata;
+      .cpu_data_req    (cpu_data_req),
+      .cpu_data_wr     (cpu_data_wr),
+      .cpu_data_addr   (cpu_data_paddr),    //paddr
+      .cpu_data_wdata  (cpu_data_wdata),
+      .cpu_data_size   (cpu_data_size),
+      .cpu_data_rdata  (cpu_data_rdata),
+      .cpu_data_addr_ok(cpu_data_addr_ok),
+      .cpu_data_data_ok(cpu_data_data_ok),
 
+      .ram_data_req    (ram_data_req),
+      .ram_data_wr     (ram_data_wr),
+      .ram_data_addr   (ram_data_addr),
+      .ram_data_wdata  (ram_data_wdata),
+      .ram_data_size   (ram_data_size),
+      .ram_data_rdata  (ram_data_rdata),
+      .ram_data_addr_ok(ram_data_addr_ok),
+      .ram_data_data_ok(ram_data_data_ok),
 
-	// use a inst_miss signal to denote that the instruction is not loadssss
-	reg inst_miss;
-	always @(posedge clk) begin
-		if (~aresetn) begin
-			inst_miss <= 1'b1;
-		end
-		if (m_i_ready & inst_miss) begin // fetch instruction ready
-			inst_miss <= 1'b0;
-		end else if (~inst_miss & data_sram_en) begin // fetch instruction ready, but need load data, so inst_miss maintain 0
-			inst_miss <= 1'b0;
-		end else if (~inst_miss & data_sram_en & m_d_ready) begin //load data ready, set inst_miss to 1
-			inst_miss <= 1'b1;
-		end else begin // other conditions, set inst_miss to 1
-			inst_miss <= 1'b1;
-		end
-	end
+      .conf_data_req    (conf_data_req),
+      .conf_data_wr     (conf_data_wr),
+      .conf_data_addr   (conf_data_addr),
+      .conf_data_wdata  (conf_data_wdata),
+      .conf_data_size   (conf_data_size),
+      .conf_data_rdata  (conf_data_rdata),
+      .conf_data_addr_ok(conf_data_addr_ok),
+      .conf_data_data_ok(conf_data_data_ok)
+  );
 
-	assign sel_i = inst_miss;	// use inst_miss to select access memory(for load/store) or fetch(each instruction)
-	assign d_addr = (data_sram_addr[31:16] != 16'hbfaf) ? data_sram_addr : {16'h1faf,data_sram_addr[15:0]}; // modify data address, to get the data from confreg
-	assign i_addr = inst_sram_addr;
-	assign m_addr = sel_i ? i_addr : d_addr;
-	// 
-	assign m_fetch = inst_sram_en & inst_miss; //if inst_miss equals 0, disable the fetch strobe
-	assign m_ld_st = data_sram_en;
+  //cache
+  i_cache i_cache (
+      .clk             (clk),
+      .rst             (rst),
+      .cpu_inst_req    (cpu_inst_req),
+      .cpu_inst_wr     (cpu_inst_wr),
+      .cpu_inst_size   (cpu_inst_size),
+      .cpu_inst_addr   (cpu_inst_paddr),
+      .cpu_inst_wdata  (cpu_inst_wdata),
+      .cpu_inst_rdata  (cpu_inst_rdata),
+      .cpu_inst_addr_ok(cpu_inst_addr_ok),
+      .cpu_inst_data_ok(cpu_inst_data_ok),
 
-	assign inst_sram_rdata = mem_data;
-	assign data_sram_rdata = mem_data;
-	assign mem_st_data = data_sram_wdata;
-	// use select signal
-	assign mem_access = sel_i ? m_fetch : m_ld_st; 
-	assign mem_size = sel_i ? 2'b10 : data_sram_size;
-	assign m_sel = sel_i ? 4'b1111 : data_sram_wen;
-	assign mem_write = sel_i ? 1'b0 : data_sram_write;
+      .cache_inst_req    (cache_inst_req),
+      .cache_inst_wr     (cache_inst_wr),
+      .cache_inst_size   (cache_inst_size),
+      .cache_inst_addr   (cache_inst_addr),
+      .cache_inst_wdata  (cache_inst_wdata),
+      .cache_inst_rdata  (cache_inst_rdata),
+      .cache_inst_addr_ok(cache_inst_addr_ok),
+      .cache_inst_data_ok(cache_inst_data_ok)
+  );
 
-	//demux
-	assign m_i_ready = mem_ready & sel_i;
-	assign m_d_ready = mem_ready & ~sel_i;
+  d_cache d_cache (
+      .clk             (clk),
+      .rst             (rst),
+      .cpu_data_req    (ram_data_req),
+      .cpu_data_wr     (ram_data_wr),
+      .cpu_data_size   (ram_data_size),
+      .cpu_data_addr   (ram_data_addr),
+      .cpu_data_wdata  (ram_data_wdata),
+      .cpu_data_rdata  (ram_data_rdata),
+      .cpu_data_addr_ok(ram_data_addr_ok),
+      .cpu_data_data_ok(ram_data_data_ok),
 
-	//
-	assign stallreq_from_if = ~m_i_ready;
-	assign stallreq_from_mem = data_sram_en & ~m_d_ready;
+      .cache_data_req    (cache_data_req),
+      .cache_data_wr     (cache_data_wr),
+      .cache_data_size   (cache_data_size),
+      .cache_data_addr   (cache_data_addr),
+      .cache_data_wdata  (cache_data_wdata),
+      .cache_data_rdata  (cache_data_rdata),
+      .cache_data_addr_ok(cache_data_addr_ok),
+      .cache_data_data_ok(cache_data_data_ok)
+  );
 
-	axi_interface interface(
-		.clk(aclk),
-		.resetn(aresetn),
-		
-		 //cache/cpu_core port
-		.mem_a(m_addr),
-		.mem_access(mem_access),
-		.mem_write(mem_write),
-		.mem_size(mem_size),
-		.mem_sel(m_sel),
-		.mem_ready(mem_ready),
-		.mem_st_data(mem_st_data),
-		.mem_data(mem_data),
-		// add a input signal 'flush', cancel the memory accessing operation in axi_interface, do not need any extra design. 
-		.flush(|excepttypeM), // use excepetion type
+  //根据是否经过Cache，将信号合为一路
+  bridge_2x1 bridge_2x1 (
+      .no_dcache(no_dcache),
 
-		.arid      (arid      ),
-		.araddr    (araddr    ),
-		.arlen     (arlen     ),
-		.arsize    (arsize    ),
-		.arburst   (arburst   ),
-		.arlock    (arlock    ),
-		.arcache   (arcache   ),
-		.arprot    (arprot    ),
-		.arvalid   (arvalid   ),
-		.arready   (arready   ),
-					
-		.rid       (rid       ),
-		.rdata     (rdata     ),
-		.rresp     (rresp     ),
-		.rlast     (rlast     ),
-		.rvalid    (rvalid    ),
-		.rready    (rready    ),
-				
-		.awid      (awid      ),
-		.awaddr    (awaddr    ),
-		.awlen     (awlen     ),
-		.awsize    (awsize    ),
-		.awburst   (awburst   ),
-		.awlock    (awlock    ),
-		.awcache   (awcache   ),
-		.awprot    (awprot    ),
-		.awvalid   (awvalid   ),
-		.awready   (awready   ),
-		
-		.wid       (wid       ),
-		.wdata     (wdata     ),
-		.wstrb     (wstrb     ),
-		.wlast     (wlast     ),
-		.wvalid    (wvalid    ),
-		.wready    (wready    ),
-		
-		.bid       (bid       ),
-		.bresp     (bresp     ),
-		.bvalid    (bvalid    ),
-		.bready    (bready    )
-	);
+      .ram_data_req    (cache_data_req),
+      .ram_data_wr     (cache_data_wr),
+      .ram_data_addr   (cache_data_addr),
+      .ram_data_wdata  (cache_data_wdata),
+      .ram_data_size   (cache_data_size),
+      .ram_data_rdata  (cache_data_rdata),
+      .ram_data_addr_ok(cache_data_addr_ok),
+      .ram_data_data_ok(cache_data_data_ok),
+
+      .conf_data_req    (conf_data_req),
+      .conf_data_wr     (conf_data_wr),
+      .conf_data_addr   (conf_data_addr),
+      .conf_data_wdata  (conf_data_wdata),
+      .conf_data_size   (conf_data_size),
+      .conf_data_rdata  (conf_data_rdata),
+      .conf_data_addr_ok(conf_data_addr_ok),
+      .conf_data_data_ok(conf_data_data_ok),
+
+      .wrap_data_req    (wrap_data_req),
+      .wrap_data_wr     (wrap_data_wr),
+      .wrap_data_addr   (wrap_data_addr),
+      .wrap_data_wdata  (wrap_data_wdata),
+      .wrap_data_size   (wrap_data_size),
+      .wrap_data_rdata  (wrap_data_rdata),
+      .wrap_data_addr_ok(wrap_data_addr_ok),
+      .wrap_data_data_ok(wrap_data_data_ok)
+  );
+
+  cpu_axi_interface cpu_axi_interface (
+      .clk(clk),
+      .resetn(~rst),
+
+      .inst_req    (cache_inst_req),
+      .inst_wr     (cache_inst_wr),
+      .inst_size   (cache_inst_size),
+      .inst_addr   (cache_inst_addr),
+      .inst_wdata  (cache_inst_wdata),
+      .inst_rdata  (cache_inst_rdata),
+      .inst_addr_ok(cache_inst_addr_ok),
+      .inst_data_ok(cache_inst_data_ok),
+
+      .data_req    (wrap_data_req),
+      .data_wr     (wrap_data_wr),
+      .data_size   (wrap_data_size),
+      .data_addr   (wrap_data_addr),
+      .data_wdata  (wrap_data_wdata),
+      .data_rdata  (wrap_data_rdata),
+      .data_addr_ok(wrap_data_addr_ok),
+      .data_data_ok(wrap_data_data_ok),
+
+      .arid(arid),
+      .araddr(araddr),
+      .arlen(arlen),
+      .arsize(arsize),
+      .arburst(arburst),
+      .arlock(arlock),
+      .arcache(arcache),
+      .arprot(arprot),
+      .arvalid(arvalid),
+      .arready(arready),
+
+      .rid(rid),
+      .rdata(rdata),
+      .rresp(rresp),
+      .rlast(rlast),
+      .rvalid(rvalid),
+      .rready(rready),
+
+      .awid(awid),
+      .awaddr(awaddr),
+      .awlen(awlen),
+      .awsize(awsize),
+      .awburst(awburst),
+      .awlock(awlock),
+      .awcache(awcache),
+      .awprot(awprot),
+      .awvalid(awvalid),
+      .awready(awready),
+
+      .wid(wid),
+      .wdata(wdata),
+      .wstrb(wstrb),
+      .wlast(wlast),
+      .wvalid(wvalid),
+      .wready(wready),
+
+      .bid(bid),
+      .bresp(bresp),
+      .bvalid(bvalid),
+      .bready(bready)
+  );
+
 endmodule

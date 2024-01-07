@@ -38,8 +38,13 @@ module datapath (
     output wire [31:0] debug_wb_pc,
     output wire [3:0] debug_wb_rf_wen,
     output wire [4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata
+    output wire [31:0] debug_wb_rf_wdata,
+    // harzard
+    input wire i_stall,
+    d_stall,
+    output wire longest_stall
 );
+
 
   //fetch stage
   wire stallF;
@@ -78,22 +83,24 @@ module datapath (
   //mem stage
   wire [31:0] pcM;
   wire flushM,memtoregM, memwriteM, regwriteM, memsignextM, breakM, syscallM, eretM,cp0writeM,cp0toregM,
-  is_in_delayslotM,riM,overflowM,pcErrorM,addrErrorSwM,addrErrorLwM,flush_exceptionM;
-  wire [1:0] membyteM;
+  is_in_delayslotM,riM,overflowM,pcErrorM,addrErrorSwM,addrErrorLwM,stallM,flush_exceptionM;
   wire [31:0] hiM, loM, aluoutM;
+  wire [1:0] membyteM;
   wire [4:0] writeregM;
   wire [31:0] writedataM, readdataM;
   wire [31:0] cp0readdataM, cp0_causeM, cp0_statusM, cp0_epcM;
 
   //writeback stage
   wire [31:0] pcW;
-  wire flushW, memtoregW, regwriteW, cp0toregW;
+  wire flushW, memtoregW, regwriteW, cp0toregW, stallW;
   wire [4:0] writeregW;
   wire [31:0] aluoutW, readdataW, resultW, cp0readdataW;
+
 
   //hazard detection
   hazard h (
       //fetch stage
+      i_stall,
       stallF,
       //decode stage
       rsD,
@@ -116,16 +123,22 @@ module datapath (
       flushE,
       stallE,
       //mem stage
+      d_stall,
       flush_exceptionM,
       writeregM,
       regwriteM,
       memtoregM,
       flushM,
+      stallM,
       //write back stage
       writeregW,
       regwriteW,
-      flushW
+      flushW,
+      stallW
   );
+
+
+  assign longest_stall = i_stall | d_stall | div_stallE;
 
   //next PC logic (operates in fetch an decode)
   mux2 #(32) pcbrmux (
@@ -197,7 +210,7 @@ module datapath (
   );
 
   //fetch stage logic
-  assign inst_enF = ~stallF;
+  assign inst_enF = ~flush_exceptionM & ~pcErrorF;
   assign is_in_delayslotF = branchD | jumpD;
   assign pcErrorF = pcF[1:0] != 2'b00;
 
@@ -435,9 +448,10 @@ module datapath (
 
 
   //mem stage
-  floprc #(244) regM (
+  flopenrc #(244) regM (
       clk,
       rst,
+      ~stallM,
       flushM,
       {
         pcE,  // 32 bits
@@ -488,7 +502,6 @@ module datapath (
         cp0_epcM  // 32 bits
       }
   );
-
   mem_ctrl mc (
       membyteM,
       aluoutM[1:0],
@@ -531,10 +544,12 @@ module datapath (
   assign mem_enM   = (memwriteM | memtoregM) & ~addrErrorSwM & ~addrErrorLwM;  // 读或者写
 
   //writeback stage
-  floprc #(136) regW (
+  flopenrc #(136) regW (
       clk,
       rst,
+      ~stallW,
       flushW,
+
       {
         pcM,  // 32 bits
         aluoutM,  // 32 bits
@@ -565,11 +580,9 @@ module datapath (
   );
 
   assign debug_wb_pc = pcW;
-  assign debug_wb_rf_wen = {4{regwriteW}};
+  assign debug_wb_rf_wen = {4{regwriteW & (~stallW | flush_exceptionM)}};
   assign debug_wb_rf_wnum = writeregW;
   assign debug_wb_rf_wdata = resultW;
-
-
 
 
 

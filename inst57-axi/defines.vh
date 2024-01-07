@@ -241,7 +241,7 @@
 `define ByteWidth 7:0
 `define MEM_BYTE 2'b00
 `define MEM_HALFWORD 2'b01
-`define MEM_WORD 2'b11
+`define MEM_WORD 2'b10
 `define BYTE_MASK 32'h000000FF
 `define HALFWORD_MASK 32'h0000FFFF
 

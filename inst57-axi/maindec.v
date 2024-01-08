@@ -34,7 +34,7 @@ module maindec (
     output reg link,
     output reg hilowrite,
     output reg memsignext,
-    output reg [1:0] membyte,
+    output reg [1:0] memsize,
     output wire break,
     output wire syscall,
     output wire eret,
@@ -201,12 +201,12 @@ module maindec (
     endcase
   end
 
-  // membyte
+  // memsize
   always @(*) begin
     case (op)
-      `EXE_LB, `EXE_LBU, `EXE_SB: membyte = `MEM_BYTE;
-      `EXE_LH, `EXE_LHU, `EXE_SH: membyte = `MEM_HALFWORD;
-      default: membyte = `MEM_WORD;
+      `EXE_LB, `EXE_LBU, `EXE_SB: memsize = `MEM_BYTE;
+      `EXE_LH, `EXE_LHU, `EXE_SH: memsize = `MEM_HALFWORD;
+      default: memsize = `MEM_WORD;
     endcase
   end
 

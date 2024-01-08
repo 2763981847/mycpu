@@ -1,7 +1,7 @@
 `include "defines.vh"
 
 module mem_ctrl (
-    input wire [1:0] membyteM,
+    input wire [1:0] memsizeM,
     input wire [1:0] offsetM,
     input wire memwriteM,
     input wire memtoregM,
@@ -9,7 +9,7 @@ module mem_ctrl (
     input wire [31:0] writedataM,
     input wire [31:0] readdataM,
 
-    output reg [ 3:0] memwenM,
+    output reg [3:0] memwenM,
     output reg [31:0] realwdataM,
     output reg [31:0] realrdataM,
     output reg addrErrorSwM,
@@ -18,8 +18,8 @@ module mem_ctrl (
   wire [4:0] bitoffsetM;
   assign bitoffsetM = offsetM * 8;
   always @(*) begin
-    case (membyteM)
-      `MEM_BYTE: begin  // 单字节操�???
+    case (memsizeM)
+      `MEM_BYTE: begin  // 单字节操�???
         memwenM = memwriteM ? 4'b0001 << offsetM : 4'b0000;
         realwdataM = (writedataM & `BYTE_MASK) << bitoffsetM;
         realrdataM = {{24{memsignextM & readdataM[bitoffsetM+7]}}, readdataM[bitoffsetM+:8]};
@@ -33,7 +33,7 @@ module mem_ctrl (
         addrErrorSwM = memwriteM & offsetM[0];
         addrErrorLwM = memtoregM & offsetM[0];
       end
-      `MEM_WORD: begin  // 字操�???
+      `MEM_WORD: begin  // 字操�???
         memwenM = memwriteM ? 4'b1111 : 4'b0000;
         realwdataM = writedataM;
         realrdataM = readdataM;

@@ -109,12 +109,20 @@ module hazard (
   // assign stallM = stallW | div_stallE;
   // assign stallW = d_stall;
 
-  assign longest_stall = i_stall | d_stall | div_stallE;
+  // assign longest_stall = i_stall | d_stall | div_stallE;
+  // assign stallF = stallD & ~flush_exceptionM;
+  // assign stallD = stallE | branchstallD | jumpstallD | lwstallD;
+  // assign stallE = stallM;
+  // assign stallM = stallW;
+  // assign stallW = longest_stall;
+  
+  assign longest_stall = i_stall | d_stall;
   assign stallF = stallD & ~flush_exceptionM;
   assign stallD = stallE | branchstallD | jumpstallD | lwstallD;
-  assign stallE = stallM;
+  assign stallE = stallM | div_stallE;
   assign stallM = stallW;
   assign stallW = longest_stall;
+
 
   assign flushD = flush_exceptionM;
   assign flushE = flush_exceptionM | (stallD & ~stallE);

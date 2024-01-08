@@ -60,7 +60,7 @@ module datapath (
   wire pcsrcD, memtoregD, memwriteD, branchD, alusrcD,regdstD,regwriteD, jumpD,regjumpD, 
   linkD,hilowriteD,memsignextD,flushD, stallD,breakD,syscallD,eretD,cp0writeD,cp0toregD,
   is_in_delayslotD,riD,pcErrorD;
-  wire [1:0] membyteD;
+  wire [1:0] memsizeD;
   wire [7:0] alucontrolD;
   wire [31:0] signimmD, signimmshD;
   wire [31:0] srcaD, srca2D, srcbD, srcb2D;
@@ -68,7 +68,7 @@ module datapath (
   wire flushE,memtoregE, memwriteE, alusrcE, linkE, regdstE, regwriteE, hilowriteE, memsignextE,
   div_stallE,stallE,breakE,syscallE,eretE,cp0writeE,cp0toregE,is_in_delayslotE,riE,overflowE,
   pcErrorE;
-  wire [1:0] membyteE;
+  wire [1:0] memsizeE;
   wire [7:0] alucontrolE;
   wire [31:0] pcplus4E, pcE;
   wire [1:0] forwardaE, forwardbE;
@@ -85,7 +85,7 @@ module datapath (
   wire flushM,memtoregM, memwriteM, regwriteM, memsignextM, breakM, syscallM, eretM,cp0writeM,cp0toregM,
   is_in_delayslotM,riM,overflowM,pcErrorM,addrErrorSwM,addrErrorLwM,stallM,flush_exceptionM;
   wire [31:0] hiM, loM, aluoutM;
-  wire [1:0] membyteM;
+  wire [1:0] memsizeM;
   wire [4:0] writeregM;
   wire [31:0] writedataM, readdataM;
   wire [31:0] cp0readdataM, cp0_causeM, cp0_statusM, cp0_epcM;
@@ -281,7 +281,7 @@ module datapath (
       linkD,
       hilowriteD,
       memsignextD,
-      membyteD,
+      memsizeD,
       breakD,
       syscallD,
       eretD,
@@ -336,7 +336,7 @@ module datapath (
         alucontrolD,  // 8 bits
         hilowriteD,  // 1 bit
         memsignextD,  // 1 bit
-        membyteD,  // 2 bits
+        memsizeD,  // 2 bits
         breakD,  // 1 bit
         syscallD,  // 1 bit
         eretD,  // 1 bit
@@ -365,7 +365,7 @@ module datapath (
         alucontrolE,
         hilowriteE,
         memsignextE,
-        membyteE,
+        memsizeE,
         breakE,
         syscallE,
         eretE,
@@ -462,7 +462,7 @@ module datapath (
         memwriteE,  // 1 bit
         regwriteE,  // 1 bit
         memsignextE,  // 1 bit
-        membyteE,  // 2 bits
+        memsizeE,  // 2 bits
         breakE,  // 1 bit
         syscallE,  // 1 bit
         eretE,  // 1 bit
@@ -486,7 +486,7 @@ module datapath (
         memwriteM,  // 1 bit
         regwriteM,  // 1 bit
         memsignextM,  // 1 bit
-        membyteM,  // 2 bits
+        memsizeM,  // 2 bits
         breakM,  // 1 bit
         syscallM,  // 1 bit
         eretM,  // 1 bit
@@ -503,7 +503,7 @@ module datapath (
       }
   );
   mem_ctrl mc (
-      membyteM,
+      memsizeM,
       aluoutM[1:0],
       memwriteM,
       memtoregM,
@@ -580,7 +580,7 @@ module datapath (
   );
 
   assign debug_wb_pc = pcW;
-  assign debug_wb_rf_wen = {4{regwriteW & (~stallW | flush_exceptionM)}};
+  assign debug_wb_rf_wen = {4{regwriteW & (~stallW | flushW)}};
   assign debug_wb_rf_wnum = writeregW;
   assign debug_wb_rf_wdata = resultW;
 

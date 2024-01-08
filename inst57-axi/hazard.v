@@ -62,7 +62,7 @@ module hazard (
 
   wire lwstallD, branchstallD, jumpstallD, longest_stall;
 
-  //forwarding sources to D stage (branch equality)
+  //forwarding sources to D stage (branch equality or jump register)
   assign forwardaD = (rsD != 0 & rsD == writeregM & regwriteM);
   assign forwardbD = (rtD != 0 & rtD == writeregM & regwriteM);
 
@@ -93,29 +93,16 @@ module hazard (
     end
   end
 
-  //stalls
+  // stalls
   assign lwstallD = memtoregE & (rtE == rsD | rtE == rtD);
   assign branchstallD = branchD &
-				(regwriteE & 
-				(writeregE == rsD | writeregE == rtD) |
-				memtoregM &
-				(writeregM == rsD | writeregM == rtD));
+  			(regwriteE & 
+  			(writeregE == rsD | writeregE == rtD) |
+  			memtoregM &
+  			(writeregM == rsD | writeregM == rtD));
   assign jumpstallD = regjumpD & ((regwriteE & writeregE == rsD) | (memtoregM & writeregM == rsD));
 
 
-  // assign stallF = stallD & ~flush_exceptionM;
-  // assign stallD = stallE | i_stall | branchstallD | jumpstallD;
-  // assign stallE = stallM | lwstallD;
-  // assign stallM = stallW | div_stallE;
-  // assign stallW = d_stall;
-
-  // assign longest_stall = i_stall | d_stall | div_stallE;
-  // assign stallF = stallD & ~flush_exceptionM;
-  // assign stallD = stallE | branchstallD | jumpstallD | lwstallD;
-  // assign stallE = stallM;
-  // assign stallM = stallW;
-  // assign stallW = longest_stall;
-  
   assign longest_stall = i_stall | d_stall;
   assign stallF = stallD & ~flush_exceptionM;
   assign stallD = stallE | branchstallD | jumpstallD | lwstallD;
@@ -129,12 +116,4 @@ module hazard (
   assign flushM = flush_exceptionM;
   assign flushW = flush_exceptionM;
 
-  //stalling D stalls all previous stages
-  // assign flushE = lwstallD | branchstallD;
-
-  //stalling D flushes next stage
-  // Note: not necessary to stall D stage on store
-  //       if source comes from load;
-  //       instead, another bypass network could
-  //       be added from W to M
 endmodule

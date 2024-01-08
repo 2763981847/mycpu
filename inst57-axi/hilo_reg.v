@@ -7,7 +7,7 @@ module hilo_reg (
     output reg [31:0] lo_output
 );
 
-  always @(negedge clk or posedge reset) begin
+  always @(posedge clk or posedge reset) begin
     if (reset) begin
       // 复位，清零 hi 和 lo 寄存器
       hi_output <= 32'b0;

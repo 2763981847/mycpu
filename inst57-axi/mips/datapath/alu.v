@@ -30,13 +30,19 @@ module alu (
     input wire [4:0] sa,
     input wire [7:0] op,
     output reg [63:0] y,
-    output reg div_stall,
+    output wire div_or_mult_stall,
     output wire overflow
 );
 
-  reg start_div = 1'b0, signed_div = 1'b0;
-  wire div_ready;
-  wire [63:0] div_result;
+  reg
+      start_div = 1'b0,
+      start_mult = 1'b0,
+      signed_div = 1'b0,
+      signed_mult = 1'b0,
+      mult_stall,
+      div_stall;
+  wire div_ready, mult_ready;
+  wire [63:0] div_result, mult_result;
   assign overflow = (op == `EXE_ADD_OP && ((a[31] & b[31] & ~y[31]) | (~a[31] & ~b[31] & y[31]))) | 
                   (op == `EXE_SUB_OP && ((a[31] & ~b[31] & ~y[31]) | (~a[31] & b[31] & y[31])));
 
@@ -58,8 +64,9 @@ module alu (
       `EXE_SUBU_OP: y = a - b;
       `EXE_SLT_OP: y = $signed(a) < $signed(b);
       `EXE_SLTU_OP: y = a < b;
-      `EXE_MULT_OP: y = $signed(a) * $signed(b);
-      `EXE_MULTU_OP: y = a * b;
+      // `EXE_MULT_OP: y = $signed(a) * $signed(b);
+      // `EXE_MULTU_OP: y = a * b;
+      `EXE_MULT_OP, `EXE_MULTU_OP: y = mult_result;
       `EXE_DIV_OP, `EXE_DIVU_OP: y = div_result;
       // 算术运算指令	I-type
       `EXE_ADDI_OP, `EXE_ADDIU_OP: y = a + b;
@@ -83,6 +90,40 @@ module alu (
     endcase
   end
 
+  //mult
+  mult mult (
+      .clk      (clk),
+      .rst      (rst),
+      .a        (a),
+      .b        (b),
+      .sign     (signed_mult),
+      .opn_valid(start_mult),
+      .res_valid(mult_ready),
+      .res_ready(start_mult),
+      .result   (mult_result)
+  );
+  
+  always @(*) begin
+    case (op)
+      `EXE_MULT_OP, `EXE_MULTU_OP: begin
+        signed_mult = op == `EXE_MULT_OP ? 1'b1 : 1'b0;
+        if (mult_ready == 1'b0) begin
+          start_mult = 1'b1;
+          mult_stall = 1'b1;
+        end else begin
+          start_mult = 1'b0;
+          mult_stall = 1'b0;
+        end
+      end
+      default: begin
+        start_mult = 1'b0;
+        mult_stall = 1'b0;
+      end
+    endcase
+  end
+
+
+  //div
   div_radix2 DIV (
       .clk      (clk),
       .rst      (rst),
@@ -95,18 +136,6 @@ module alu (
       .result   (div_result)
   );
 
-
-  // div divider (
-  //     clk,
-  //     rst,
-  //     signed_div,
-  //     a,
-  //     b,
-  //     start_div,
-  //     1'b0,
-  //     div_result,
-  //     div_ready
-  // );
 
   always @(*) begin
     case (op)
@@ -126,4 +155,6 @@ module alu (
       end
     endcase
   end
+
+  assign div_or_mult_stall = div_stall | mult_stall;
 endmodule

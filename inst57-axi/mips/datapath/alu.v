@@ -29,6 +29,7 @@ module alu (
     lo,
     input wire [4:0] sa,
     input wire [7:0] op,
+    input wire stallE,
     output reg [63:0] y,
     output wire div_or_mult_stall,
     output wire overflow
@@ -99,10 +100,10 @@ module alu (
       .sign     (signed_mult),
       .opn_valid(start_mult),
       .res_valid(mult_ready),
-      .res_ready(start_mult),
+      .res_ready(~stallE),
       .result   (mult_result)
   );
-  
+
   always @(*) begin
     case (op)
       `EXE_MULT_OP, `EXE_MULTU_OP: begin
@@ -132,7 +133,7 @@ module alu (
       .sign     (signed_div),  //1 signed
       .opn_valid(start_div),
       .res_valid(div_ready),
-      .res_ready(start_div),
+      .res_ready(~stallE),
       .result   (div_result)
   );
 

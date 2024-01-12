@@ -91,6 +91,6 @@ module div_radix2 (
   wire data_go;
   assign data_go = res_valid & res_ready;
   always @(posedge clk) begin
-    res_valid <= rst ? 1'b0 : cnt[5] ? 1'b1 : 1'b0;
+    res_valid <= rst ? 1'b0 : cnt[5] ? 1'b1 : data_go ? 1'b0 : res_valid;
   end
 endmodule

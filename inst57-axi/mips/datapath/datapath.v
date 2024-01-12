@@ -412,6 +412,7 @@ module datapath (
       loM,
       saE,
       alucontrolE,
+      stallE,
       aluoutE,
       div_stallE,
       overflowE

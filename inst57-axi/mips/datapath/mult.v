@@ -51,9 +51,9 @@ module mult (
           next_state <= OUTPUT;
         end
         OUTPUT: begin
+          res_valid <= 1;
+          result <= temp_result;
           if (res_ready) begin
-            result <= temp_result;
-            res_valid <= 1;
             next_state <= IDLE;
           end
         end

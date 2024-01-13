@@ -23,7 +23,6 @@ module exception(
                   ( |(cp0_status[9:8] & cp0_cause[9:8]) ) ||        //soft interupt
                   ( |(cp0_status[15:10] & ext_int) )           //hard interupt
    );
-   // 全局中断开启,且没有例外在处理,识别软件中断或者硬件中断;
 
    assign except_type =    (int)                   ? `EXC_TYPE_INT :
                            (addrErrorLw | pcError) ? `EXC_TYPE_ADEL :

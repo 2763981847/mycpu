@@ -171,7 +171,7 @@ module mycpu_top (
   wire [31:0] cpu_data_paddr;
   wire no_dcache;
 
-  //将虚拟地址转换成物理地址，并判断是否需要经过Data Cache
+
   mmu mmu (
       .inst_vaddr(cpu_inst_addr),
       .inst_paddr(cpu_inst_paddr),
@@ -180,7 +180,6 @@ module mycpu_top (
       .no_dcache (no_dcache)
   );
 
-  //根据是否经过Cache，将信号分为两路
   bridge_1x2 bridge_1x2 (
       .no_dcache(no_dcache),
 
@@ -257,7 +256,6 @@ module mycpu_top (
       .cache_data_data_ok(cache_data_data_ok)
   );
 
-  //根据是否经过Cache，将信号合为一路
   bridge_2x1 bridge_2x1 (
       .no_dcache(no_dcache),
 

@@ -14,8 +14,7 @@ module mult (
   // State machine states
   localparam IDLE = 0;
   localparam COMPUTE = 1;
-  localparam STALL = 2;
-  localparam OUTPUT = 3;
+  localparam OUTPUT = 2;
 
   reg [63:0] temp_result;
   reg [1:0] state, next_state;

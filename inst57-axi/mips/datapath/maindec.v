@@ -193,7 +193,7 @@ module maindec (
     endcase
   end
 
-  // memsignext
+  // memsignext 1 - sign extend, 0 - zero extend
   always @(*) begin
     case (op)
       `EXE_LHU, `EXE_LBU: memsignext = 1'b0;
